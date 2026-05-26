@@ -3,1336 +3,823 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Effectify</title>
+<title>Dot·ify — Dotted Art Generator</title>
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;500;600;700;800&display=swap');
 
-:root {
-  --accent:   #0a84ff;
-  --accent2:  #30d158;
-  --accent3:  #ff375f;
-  --accent4:  #bf5af2;
-  --text:            rgba(255,255,255,0.95);
-  --text-secondary:  rgba(255,255,255,0.55);
-  --text-tertiary:   rgba(255,255,255,0.32);
-  --glass:           rgba(255,255,255,0.10);
-  --glass-hover:     rgba(255,255,255,0.16);
-  --glass-border:    rgba(255,255,255,0.17);
-  --separator:       rgba(255,255,255,0.09);
-  --shadow-glass: 0 8px 32px rgba(0,0,0,0.30), 0 2px 8px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.20);
-  --radius-sm: 12px;
-  --radius-md: 18px;
-  --radius-lg: 26px;
-  --radius-xl: 36px;
-}
+  :root {
+    --bg: #0e0e0e;
+    --surface: #161616;
+    --surface2: #1e1e1e;
+    --border: #2a2a2a;
+    --accent: #e8ff47;
+    --accent2: #ff6b35;
+    --text: #f0f0f0;
+    --text-muted: #666;
+    --dot-preview: #e8ff47;
+  }
 
-body {
-  font-family: -apple-system, 'SF Pro Display', BlinkMacSystemFont, system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  min-height: 100vh;
-  overflow-x: hidden;
-  color: var(--text);
-}
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
-/* ── Ambient BG ─────────────────────────────────────────────── */
-.bg-wrap {
-  position: fixed; inset: 0; z-index: 0;
-  background: linear-gradient(135deg, #080812 0%, #090f22 40%, #0a1530 70%, #08080f 100%);
-  overflow: hidden;
-}
-.orb {
-  position: absolute; border-radius: 50%;
-  filter: blur(90px); opacity: 0.5;
-  animation: drift 20s ease-in-out infinite;
-}
-.orb1 { width:640px;height:640px; background:radial-gradient(circle,rgba(10,132,255,.7),rgba(10,132,255,.05) 70%); top:-200px;left:-140px; animation-delay:0s; }
-.orb2 { width:520px;height:520px; background:radial-gradient(circle,rgba(94,92,230,.6),rgba(94,92,230,.05) 70%); top:28%;right:-120px; animation-delay:-7s; animation-duration:24s; }
-.orb3 { width:460px;height:460px; background:radial-gradient(circle,rgba(48,209,88,.38),rgba(48,209,88,.04) 70%); bottom:-110px;left:28%; animation-delay:-13s; animation-duration:28s; }
-.orb4 { width:340px;height:340px; background:radial-gradient(circle,rgba(191,90,242,.32),transparent 70%); top:52%;left:8%; animation-delay:-5s; animation-duration:22s; }
-@keyframes drift {
-  0%,100% { transform:translate(0,0) scale(1); }
-  33%  { transform:translate(44px,-34px) scale(1.09); }
-  66%  { transform:translate(-22px,44px) scale(0.94); }
-}
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
 
-/* ── Nav ─────────────────────────────────────────────────────── */
-.nav-bar {
-  position: sticky; top: 0; z-index: 200;
-  height: 58px; padding: 0 32px;
-  display: flex; align-items: center; justify-content: space-between;
-  background: rgba(8,10,22,0.48);
-  backdrop-filter: saturate(200%) blur(44px);
-  -webkit-backdrop-filter: saturate(200%) blur(44px);
-  border-bottom: 0.5px solid var(--separator);
-}
+  /* Grid bg */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 48px 48px;
+    opacity: 0.4;
+    pointer-events: none;
+    z-index: 0;
+  }
 
-.nav-logo { display:flex; align-items:center; gap:12px; }
+  header {
+    position: relative;
+    z-index: 1;
+    padding: 2.5rem 3rem 2rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
 
-.nav-icon {
-  width: 32px; height: 32px;
-  background: linear-gradient(135deg,#0a84ff,#5e5ce6);
-  border-radius: 9px;
-  display: flex; align-items:center; justify-content:center;
-  font-size: 16px;
-  box-shadow: 0 2px 14px rgba(10,132,255,.42), inset 0 1px 0 rgba(255,255,255,.22);
-  position: relative; overflow: hidden;
-}
-.nav-icon::after {
-  content:''; position:absolute; top:0; left:0; right:0; height:48%;
-  background:linear-gradient(rgba(255,255,255,.22),transparent);
-  border-radius:9px 9px 0 0;
-}
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
 
-.nav-name {
-  font-size: 18px; font-weight: 700; letter-spacing: -0.04em;
-  background: linear-gradient(135deg,#fff 20%,rgba(255,255,255,.55) 100%);
-  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-}
+  .logo span.accent { color: var(--accent); }
 
-.nav-right { display:flex; align-items:center; gap:10px; }
+  .logo-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: inline-block;
+    animation: pulse 2s ease-in-out infinite;
+  }
 
-.nav-pill {
-  display:flex; align-items:center; gap:6px;
-  padding:5px 14px;
-  background:rgba(10,132,255,.14);
-  border:0.5px solid rgba(10,132,255,.34);
-  border-radius:20px;
-  font-size:12px; font-weight:500; color:#0a84ff;
-  backdrop-filter:blur(8px);
-}
-.live-dot {
-  width:6px; height:6px; border-radius:50%;
-  background:var(--accent2);
-  animation:blink 2s ease-in-out infinite;
-}
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.4); opacity: 0.7; }
+  }
 
-/* ── Effect Switcher ─────────────────────────────────────────── */
-.effect-bar {
-  position: relative; z-index: 10;
-  display: flex; justify-content: center;
-  padding: 22px 20px 0;
-}
+  .tagline {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
 
-.effect-tabs {
-  display: flex; gap: 4px;
-  background: rgba(255,255,255,0.07);
-  border: 0.5px solid var(--glass-border);
-  border-radius: 20px;
-  padding: 4px;
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  box-shadow: 0 4px 24px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.1);
-}
+  main {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 3rem 2rem;
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 2rem;
+    align-items: start;
+  }
 
-.effect-tab {
-  padding: 9px 24px;
-  border-radius: 16px;
-  border: none; background: transparent;
-  font-family: -apple-system, system-ui, sans-serif;
-  font-size: 14px; font-weight: 600; letter-spacing: -0.02em;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: all 0.28s cubic-bezier(0.34,1.56,0.64,1);
-  display: flex; align-items: center; gap: 8px;
-  white-space: nowrap;
-  position: relative;
-}
+  /* CONTROLS PANEL */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
 
-.effect-tab .tab-icon {
-  font-size: 16px;
-  transition: transform 0.28s cubic-bezier(0.34,1.56,0.64,1);
-}
+  .panel-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
 
-.effect-tab:hover { color: var(--text); }
-.effect-tab:hover .tab-icon { transform: scale(1.15); }
+  .panel-header::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
 
-.effect-tab.active {
-  background: rgba(255,255,255,0.14);
-  color: var(--text);
-  box-shadow: 0 2px 12px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.22);
-  border: 0.5px solid rgba(255,255,255,.18);
-}
-.effect-tab.active .tab-icon { transform: scale(1.1); }
+  .panel-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; }
 
-.tab-badge {
-  font-size: 10px; font-weight: 700; letter-spacing: 0.06em;
-  padding: 2px 7px; border-radius: 8px;
-  background: linear-gradient(135deg,#0a84ff,#5e5ce6);
-  color: #fff;
-  text-transform: uppercase;
-  box-shadow: 0 2px 8px rgba(10,132,255,.4);
-}
+  /* UPLOAD ZONE */
+  .upload-zone {
+    border: 1px dashed var(--border);
+    border-radius: 2px;
+    padding: 2rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    background: var(--bg);
+  }
 
-/* ── Main Layout ─────────────────────────────────────────────── */
-main {
-  position: relative; z-index: 1;
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 20px 20px 72px;
-}
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--accent);
+    background: rgba(232, 255, 71, 0.03);
+  }
 
-.effect-panel { display: none; }
-.effect-panel.active { display: block; }
+  .upload-zone input[type=file] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
 
-.two-col {
-  display: grid;
-  grid-template-columns: 340px 1fr;
-  gap: 14px;
-  align-items: start;
-}
+  .upload-icon {
+    width: 48px; height: 48px;
+    margin: 0 auto 1rem;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    color: var(--text-muted);
+    transition: all 0.2s;
+  }
 
-/* ── Glass Card ──────────────────────────────────────────────── */
-.glass-card {
-  background: var(--glass);
-  backdrop-filter: saturate(180%) blur(40px) brightness(1.05);
-  -webkit-backdrop-filter: saturate(180%) blur(40px) brightness(1.05);
-  border-radius: var(--radius-lg);
-  border: 0.5px solid var(--glass-border);
-  box-shadow: var(--shadow-glass);
-  overflow: hidden;
-  position: relative;
-}
-.glass-card::before {
-  content:''; position:absolute; top:0; left:8%; right:8%; height:1px;
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,.52) 30%,rgba(255,255,255,.72) 50%,rgba(255,255,255,.52) 70%,transparent);
-  z-index:2;
-}
-.glass-card::after {
-  content:''; position:absolute; inset:0;
-  background:linear-gradient(160deg,rgba(255,255,255,.07) 0%,transparent 50%);
-  pointer-events:none; z-index:1; border-radius:inherit;
-}
+  .upload-zone:hover .upload-icon {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
 
-.card-header {
-  padding: 14px 20px 12px;
-  border-bottom: 0.5px solid var(--separator);
-  position: relative; z-index: 3;
-}
-.card-title {
-  font-size: 11px; font-weight: 600;
-  text-transform: uppercase; letter-spacing: 0.09em;
-  color: var(--text-tertiary);
-}
-.card-body { position:relative; z-index:3; }
+  .upload-text {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
 
-/* ── Upload Zone ─────────────────────────────────────────────── */
-.upload-section { padding: 14px; }
+  .upload-text strong { color: var(--text); display: block; margin-bottom: 0.25rem; font-size: 0.85rem; }
 
-.upload-zone {
-  border: 1.5px dashed rgba(255,255,255,.18);
-  border-radius: var(--radius-md);
-  padding: 26px 14px;
-  text-align: center; cursor: pointer;
-  transition: all .25s ease;
-  position: relative;
-  background: rgba(255,255,255,.04);
-}
-.upload-zone:hover, .upload-zone.drag-over {
-  border-color: rgba(10,132,255,.58);
-  background: rgba(10,132,255,.07);
-}
-.upload-zone input[type=file] {
-  position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%;
-}
-.upload-icon-wrap {
-  width:52px; height:52px;
-  background:linear-gradient(145deg,rgba(10,132,255,.85),rgba(94,92,230,.85));
-  border-radius:14px;
-  display:flex; align-items:center; justify-content:center;
-  margin:0 auto 12px; font-size:22px;
-  box-shadow:0 8px 24px rgba(10,132,255,.33), inset 0 1px 0 rgba(255,255,255,.28);
-  position:relative; overflow:hidden; transition:transform .2s, box-shadow .2s;
-}
-.upload-icon-wrap::after {
-  content:''; position:absolute; top:0; left:0; right:0; height:52%;
-  background:linear-gradient(rgba(255,255,255,.2),transparent);
-  border-radius:14px 14px 0 0;
-}
-.upload-zone:hover .upload-icon-wrap {
-  transform:translateY(-2px) scale(1.05);
-  box-shadow:0 12px 32px rgba(10,132,255,.44), inset 0 1px 0 rgba(255,255,255,.28);
-}
-.upload-primary { font-size:14px; font-weight:600; color:var(--accent); margin-bottom:3px; }
-.upload-secondary { font-size:12px; color:var(--text-secondary); }
+  /* PREVIEW THUMB */
+  .thumb-wrap {
+    display: none;
+    position: relative;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    background: repeating-conic-gradient(#1e1e1e 0% 25%, #161616 0% 50%) 0 0 / 16px 16px;
+  }
 
-.thumb-wrap {
-  display:none; border-radius:var(--radius-sm);
-  overflow:hidden; position:relative;
-  background:repeating-conic-gradient(rgba(255,255,255,.04) 0% 25%,rgba(0,0,0,.1) 0% 50%) 0 0/16px 16px;
-  border:0.5px solid var(--glass-border);
-}
-.thumb-wrap img { width:100%; height:130px; object-fit:contain; display:block; }
-.thumb-replace {
-  position:absolute; top:8px; right:8px;
-  background:rgba(0,0,0,.52); backdrop-filter:blur(12px) saturate(180%);
-  -webkit-backdrop-filter:blur(12px) saturate(180%);
-  color:rgba(255,255,255,.9);
-  font-family:-apple-system,system-ui,sans-serif;
-  font-size:11px; font-weight:500; padding:4px 10px;
-  border-radius:20px; border:0.5px solid rgba(255,255,255,.18);
-  cursor:pointer; transition:all .15s;
-}
-.thumb-replace:hover { background:rgba(0,0,0,.72); }
+  .thumb-wrap img {
+    width: 100%;
+    height: 160px;
+    object-fit: contain;
+    display: block;
+  }
 
-/* ── Sliders ─────────────────────────────────────────────────── */
-.slider-row {
-  padding: 11px 20px 14px;
-  border-bottom: 0.5px solid var(--separator);
-}
-.slider-row:last-of-type { border-bottom:none; }
-.slider-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
-.slider-label { font-size:15px; font-weight:400; color:var(--text); }
-.slider-value {
-  font-size:13px; color:var(--accent); font-weight:500;
-  font-variant-numeric:tabular-nums;
-  background:rgba(10,132,255,.14);
-  padding:2px 8px; border-radius:6px;
-  border:0.5px solid rgba(10,132,255,.24);
-}
+  .thumb-replace {
+    position: absolute;
+    top: 6px; right: 6px;
+    background: rgba(0,0,0,0.7);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    padding: 4px 8px;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    transition: all 0.15s;
+  }
 
-input[type=range] {
-  -webkit-appearance:none;
-  width:100%; height:5px; border-radius:3px;
-  outline:none; background:rgba(255,255,255,.11); cursor:pointer;
-}
-input[type=range]::-webkit-slider-runnable-track {
-  height:5px; border-radius:3px;
-  background:linear-gradient(to right, var(--accent) var(--pct,0%), rgba(255,255,255,.11) var(--pct,0%));
-}
-input[type=range]::-webkit-slider-thumb {
-  -webkit-appearance:none;
-  width:22px; height:22px; border-radius:50%;
-  background:rgba(255,255,255,.93); backdrop-filter:blur(8px);
-  box-shadow:0 2px 10px rgba(0,0,0,.35),0 1px 3px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.9);
-  cursor:pointer; margin-top:-8.5px;
-  transition:transform .12s, box-shadow .12s;
-}
-input[type=range]:active::-webkit-slider-thumb {
-  transform:scale(1.16);
-  box-shadow:0 4px 16px rgba(0,0,0,.4),0 0 0 4px rgba(10,132,255,.22),inset 0 1px 0 rgba(255,255,255,.9);
-}
+  .thumb-replace:hover { color: var(--accent); border-color: var(--accent); }
 
-/* ── Segmented ───────────────────────────────────────────────── */
-.segmented-wrap { padding:13px 20px; border-bottom:0.5px solid var(--separator); }
-.seg-label { font-size:15px; color:var(--text); margin-bottom:9px; }
-.segmented {
-  display:flex; background:rgba(255,255,255,.07);
-  border-radius:11px; padding:3px; gap:2px;
-  border:0.5px solid rgba(255,255,255,.09);
-}
-.seg-btn {
-  flex:1; padding:8px 4px;
-  border:none; border-radius:8px; background:transparent;
-  font-family:-apple-system,system-ui,sans-serif;
-  font-size:12px; font-weight:500; color:var(--text-secondary);
-  cursor:pointer; transition:all .2s ease;
-  display:flex; align-items:center; justify-content:center; gap:4px;
-}
-.seg-btn.active {
-  background:rgba(255,255,255,.14); backdrop-filter:blur(12px);
-  color:var(--text);
-  box-shadow:0 1px 6px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.24);
-  border:0.5px solid rgba(255,255,255,.17);
-}
+  /* CONTROLS */
+  .control-group { display: flex; flex-direction: column; gap: 0.6rem; }
 
-/* ── Color Swatches ──────────────────────────────────────────── */
-.color-section { padding:13px 20px 17px; }
-.color-label { font-size:15px; color:var(--text); margin-bottom:11px; }
-.color-grid { display:flex; gap:9px; align-items:center; flex-wrap:wrap; }
-.color-swatch {
-  width:30px; height:30px; border-radius:50%; cursor:pointer;
-  transition:transform .15s, box-shadow .15s;
-  position:relative; border:none;
-  box-shadow:0 2px 8px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.28);
-}
-.color-swatch::after {
-  content:''; position:absolute; inset:-4px;
-  border-radius:50%; border:2px solid transparent; transition:all .2s;
-}
-.color-swatch.active::after {
-  border-color:rgba(255,255,255,.8);
-  box-shadow:0 0 0 1px rgba(255,255,255,.28);
-}
-.color-swatch:hover { transform:scale(1.13) translateY(-1px); }
-.color-custom {
-  width:30px; height:30px; border-radius:50%; position:relative; cursor:pointer;
-  background:conic-gradient(from 0deg,#ff375f,#ff9500,#ffd60a,#30d158,#0a84ff,#5e5ce6,#bf5af2,#ff375f);
-  box-shadow:0 2px 8px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.28);
-  flex-shrink:0; transition:transform .15s;
-}
-.color-custom:hover { transform:scale(1.13) translateY(-1px); }
-.color-custom input[type=color] {
-  position:absolute; inset:-4px;
-  width:calc(100% + 8px); height:calc(100% + 8px);
-  opacity:0; cursor:pointer; border-radius:50%;
-}
+  .control-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
 
-/* ── Output Panel ────────────────────────────────────────────── */
-.output-panel {
-  background: var(--glass);
-  backdrop-filter: saturate(180%) blur(40px) brightness(1.05);
-  -webkit-backdrop-filter: saturate(180%) blur(40px) brightness(1.05);
-  border-radius: var(--radius-lg);
-  border: 0.5px solid var(--glass-border);
-  box-shadow: var(--shadow-glass);
-  overflow: hidden;
-  min-height: 520px;
-  display: flex; flex-direction: column;
-  position: relative;
-}
-.output-panel::before {
-  content:''; position:absolute; top:0; left:8%; right:8%; height:1px;
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,.52) 30%,rgba(255,255,255,.72) 50%,rgba(255,255,255,.52) 70%,transparent);
-  z-index:2;
-}
-.output-panel::after {
-  content:''; position:absolute; inset:0;
-  background:linear-gradient(160deg,rgba(255,255,255,.07) 0%,transparent 50%);
-  pointer-events:none; z-index:1; border-radius:inherit;
-}
+  .control-value {
+    color: var(--accent);
+    font-size: 0.72rem;
+  }
 
-.output-header {
-  padding:15px 20px; border-bottom:0.5px solid var(--separator);
-  display:flex; align-items:center; justify-content:space-between;
-  position:relative; z-index:3;
-}
-.output-title {
-  font-size:11px; font-weight:600;
-  text-transform:uppercase; letter-spacing:0.09em; color:var(--text-tertiary);
-}
-.output-actions { display:flex; gap:8px; }
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 2px;
+    background: var(--border);
+    outline: none;
+    border-radius: 0;
+  }
 
-.btn-action {
-  display:none; padding:7px 16px;
-  border-radius:20px; border:0.5px solid transparent;
-  font-family:-apple-system,system-ui,sans-serif;
-  font-size:12px; font-weight:600; cursor:pointer;
-  transition:all .18s ease;
-  backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
-  letter-spacing:-0.01em; position:relative; overflow:hidden;
-}
-.btn-action::after {
-  content:''; position:absolute; top:0; left:0; right:0; height:50%;
-  background:linear-gradient(rgba(255,255,255,.14),transparent);
-  border-radius:20px 20px 0 0; pointer-events:none;
-}
-.btn-download {
-  background:rgba(10,132,255,.2); border-color:rgba(10,132,255,.38); color:#0a84ff;
-  box-shadow:0 2px 8px rgba(10,132,255,.18),inset 0 1px 0 rgba(255,255,255,.13);
-}
-.btn-download:hover { background:rgba(10,132,255,.3); box-shadow:0 4px 16px rgba(10,132,255,.28),inset 0 1px 0 rgba(255,255,255,.13); transform:translateY(-1px); }
-.btn-copy {
-  background:rgba(48,209,88,.16); border-color:rgba(48,209,88,.36); color:var(--accent2);
-  box-shadow:0 2px 8px rgba(48,209,88,.16),inset 0 1px 0 rgba(255,255,255,.11);
-}
-.btn-copy:hover { background:rgba(48,209,88,.26); box-shadow:0 4px 16px rgba(48,209,88,.26),inset 0 1px 0 rgba(255,255,255,.11); transform:translateY(-1px); }
-.btn-copy.success { background:rgba(48,209,88,.82); border-color:rgba(48,209,88,.6); color:#fff; }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: 2px solid var(--bg);
+    box-shadow: 0 0 0 1px var(--accent);
+  }
 
-.output-canvas-wrap {
-  flex:1; display:flex; align-items:center; justify-content:center;
-  padding:26px; position:relative; z-index:2;
-  background:repeating-conic-gradient(rgba(255,255,255,.022) 0% 25%,rgba(0,0,0,.07) 0% 50%) 0 0/20px 20px;
-}
+  input[type=range]::-webkit-slider-runnable-track {
+    background: linear-gradient(to right, var(--accent) 0%, var(--accent) var(--pct, 0%), var(--border) var(--pct, 0%));
+    height: 2px;
+  }
 
-canvas.output-canvas, #fishCanvas {
-  max-width:100%; max-height:490px; display:none;
-  border-radius:12px;
-  box-shadow:0 12px 48px rgba(0,0,0,.4),0 2px 8px rgba(0,0,0,.2);
-}
+  /* COLOR PICKER */
+  .color-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
 
-/* ── Empty State ─────────────────────────────────────────────── */
-.empty-state { text-align:center; }
-.empty-icon {
-  width:68px; height:68px;
-  background:rgba(255,255,255,.07); backdrop-filter:blur(12px);
-  border:0.5px solid rgba(255,255,255,.14);
-  border-radius:20px;
-  display:flex; align-items:center; justify-content:center;
-  font-size:28px; margin:0 auto 16px;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 4px 16px rgba(0,0,0,.18);
-  position:relative; overflow:hidden;
-}
-.empty-icon::after {
-  content:''; position:absolute; top:0; left:0; right:0; height:50%;
-  background:linear-gradient(rgba(255,255,255,.1),transparent);
-  border-radius:20px 20px 0 0;
-}
-.empty-title { font-size:17px; font-weight:600; color:var(--text); margin-bottom:5px; letter-spacing:-0.02em; }
-.empty-sub { font-size:13px; color:var(--text-secondary); line-height:1.65; }
+  .color-swatch {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
 
-/* ── Loading ─────────────────────────────────────────────────── */
-.loading-overlay {
-  position:absolute; inset:0;
-  background:rgba(4,8,22,.44); backdrop-filter:blur(14px) saturate(180%);
-  -webkit-backdrop-filter:blur(14px) saturate(180%);
-  display:none; align-items:center; justify-content:center;
-  flex-direction:column; gap:13px; z-index:10;
-}
-.spinner {
-  width:28px; height:28px;
-  border:2.5px solid rgba(255,255,255,.1);
-  border-top-color:var(--accent);
-  border-radius:50%;
-  animation:spin .65s linear infinite;
-}
-@keyframes spin { to{transform:rotate(360deg)} }
-.loading-text { font-size:13px; color:var(--text-secondary); font-weight:500; }
+  .color-swatch:hover { transform: scale(1.15); }
+  .color-swatch.active { border-color: var(--text); transform: scale(1.1); }
 
-/* ── Fish Eye Specific ───────────────────────────────────────── */
-.text-input-wrap { padding: 14px 20px; border-bottom: 0.5px solid var(--separator); }
-.text-input-label { font-size:15px; color:var(--text); margin-bottom:9px; }
+  .color-custom {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 2px dashed var(--border);
+    cursor: pointer;
+    overflow: hidden;
+    position: relative;
+    flex-shrink: 0;
+  }
 
-textarea.fish-text {
-  width:100%; min-height:90px;
-  background:rgba(255,255,255,.06);
-  border:0.5px solid var(--glass-border);
-  border-radius:var(--radius-sm);
-  color:var(--text); font-family:-apple-system,system-ui,sans-serif;
-  font-size:15px; line-height:1.5;
-  padding:12px 14px; resize:vertical;
-  outline:none; transition:border-color .2s, background .2s;
-}
-textarea.fish-text:focus {
-  border-color:rgba(10,132,255,.5);
-  background:rgba(10,132,255,.06);
-}
-textarea.fish-text::placeholder { color:var(--text-tertiary); }
+  .color-custom input[type=color] {
+    position: absolute;
+    inset: -4px;
+    width: calc(100% + 8px);
+    height: calc(100% + 8px);
+    opacity: 0;
+    cursor: pointer;
+  }
 
-.fish-source-toggle {
-  padding: 13px 20px;
-  border-bottom: 0.5px solid var(--separator);
-}
-.fish-source-label { font-size:15px; color:var(--text); margin-bottom:9px; }
-.source-tabs {
-  display:flex; background:rgba(255,255,255,.07);
-  border-radius:11px; padding:3px; gap:2px;
-  border:0.5px solid rgba(255,255,255,.09);
-}
-.source-tab {
-  flex:1; padding:8px; border:none; border-radius:8px;
-  background:transparent; color:var(--text-secondary);
-  font-family:-apple-system,system-ui,sans-serif;
-  font-size:12px; font-weight:500; cursor:pointer;
-  transition:all .2s;
-}
-.source-tab.active {
-  background:rgba(255,255,255,.14); color:var(--text);
-  box-shadow:0 1px 6px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.24);
-  border:0.5px solid rgba(255,255,255,.17);
-}
+  .color-custom-bg {
+    position: absolute;
+    inset: 0;
+    background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red);
+    opacity: 0.7;
+    border-radius: 50%;
+  }
 
-.fish-image-section {
-  display:none; padding:14px; border-bottom:0.5px solid var(--separator);
-}
-.fish-image-section.visible { display:block; }
+  /* SHAPE TOGGLE */
+  .shape-row { display: flex; gap: 0.5rem; }
 
-.fish-text-section { border-bottom:0.5px solid var(--separator); }
-.fish-text-section.hidden { display:none; }
+  .shape-btn {
+    flex: 1;
+    padding: 0.5rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+  }
 
-/* font style options for fish */
-.font-picker { padding:13px 20px; border-bottom:0.5px solid var(--separator); }
-.font-picker-label { font-size:15px; color:var(--text); margin-bottom:9px; }
-.font-grid {
-  display:grid; grid-template-columns:repeat(2,1fr); gap:6px;
-}
-.font-btn {
-  padding:8px 10px; border:0.5px solid var(--glass-border);
-  border-radius:10px; background:rgba(255,255,255,.05);
-  color:var(--text-secondary); cursor:pointer;
-  font-family:-apple-system,system-ui,sans-serif;
-  font-size:12px; font-weight:500; text-align:center;
-  transition:all .18s;
-}
-.font-btn.active {
-  background:rgba(10,132,255,.16); border-color:rgba(10,132,255,.36);
-  color:#0a84ff;
-}
-.font-btn:hover:not(.active) { background:rgba(255,255,255,.09); color:var(--text); }
+  .shape-btn:hover { border-color: var(--text-muted); color: var(--text); }
+  .shape-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(232,255,71,0.05); }
 
-/* Strength slider reuse (handled by existing slider styles) */
+  /* GENERATE BTN */
+  .btn-generate {
+    width: 100%;
+    padding: 0.9rem;
+    background: var(--accent);
+    color: #0e0e0e;
+    border: none;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
 
-/* ── Responsive ──────────────────────────────────────────────── */
-@media (max-width: 760px) {
-  .two-col { grid-template-columns:1fr; }
-  main { padding:16px 14px 56px; }
-  .effect-tab .tab-badge { display:none; }
-  .effect-tab { padding:9px 16px; font-size:13px; }
-}
+  .btn-generate:hover { background: #fff; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(232,255,71,0.25); }
+  .btn-generate:active { transform: translateY(0); }
+  .btn-generate:disabled { background: var(--border); color: var(--text-muted); cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* OUTPUT PANEL */
+  .output-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    min-height: 500px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .output-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .output-header-right { display: flex; gap: 0.5rem; align-items: center; }
+
+  .output-header-left { display: flex; align-items: center; gap: 0.5rem; }
+  .output-header-left::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent2);
+  }
+
+  .btn-download {
+    padding: 0.35rem 0.8rem;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: none;
+  }
+
+  .btn-download:hover { border-color: var(--accent); color: var(--accent); }
+
+  .output-canvas-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: repeating-conic-gradient(#1a1a1a 0% 25%, #161616 0% 50%) 0 0 / 20px 20px;
+    position: relative;
+  }
+
+  .empty-state {
+    text-align: center;
+    color: var(--text-muted);
+  }
+
+  .empty-dots {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+    width: 80px;
+    margin: 0 auto 1.2rem;
+    opacity: 0.3;
+  }
+
+  .empty-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    animation: fadeIn 1s ease-in-out infinite alternate;
+  }
+
+  .empty-dot:nth-child(odd) { animation-delay: 0.3s; }
+  .empty-dot:nth-child(3n) { animation-delay: 0.6s; }
+
+  @keyframes fadeIn {
+    from { opacity: 0.2; }
+    to { opacity: 1; }
+  }
+
+  .empty-state p { font-size: 0.75rem; line-height: 1.7; }
+
+  #outputCanvas { max-width: 100%; max-height: 520px; display: none; image-rendering: pixelated; }
+
+  /* Loading */
+  .loading-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(14,14,14,0.85);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 1rem;
+    z-index: 5;
+  }
+
+  .loading-dots {
+    display: flex;
+    gap: 6px;
+  }
+
+  .loading-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: bounce 0.9s ease-in-out infinite;
+  }
+
+  .loading-dot:nth-child(2) { animation-delay: 0.15s; }
+  .loading-dot:nth-child(3) { animation-delay: 0.3s; }
+
+  @keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-10px); }
+  }
+
+  .loading-text {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    letter-spacing: 0.08em;
+  }
+
+  canvas#hiddenCanvas { display: none; }
+
+  @media (max-width: 800px) {
+    main { grid-template-columns: 1fr; }
+    header { padding: 1.5rem; }
+    .panel-body, main { padding: 1.25rem; }
+  }
 </style>
 </head>
 <body>
 
-<div class="bg-wrap">
-  <div class="orb orb1"></div>
-  <div class="orb orb2"></div>
-  <div class="orb orb3"></div>
-  <div class="orb orb4"></div>
-</div>
-
-<!-- NAV -->
-<div class="nav-bar">
-  <div class="nav-logo">
-    <div class="nav-icon">✦</div>
-    <div>
-      <div class="nav-name">Effectify</div>
-    </div>
+<header>
+  <div class="logo">
+    <div class="logo-dot"></div>
+    Dot<span class="accent">·</span>ify
   </div>
-  <div class="nav-right">
-    <div class="nav-pill">
-      <div class="live-dot"></div>
-      Live Preview
-    </div>
-  </div>
-</div>
-
-<!-- EFFECT SWITCHER -->
-<div class="effect-bar">
-  <div class="effect-tabs">
-    <button class="effect-tab active" data-effect="dotify" onclick="switchEffect('dotify')">
-      <span class="tab-icon">●</span>
-      Dotify
-      <span class="tab-badge">Image</span>
-    </button>
-    <button class="effect-tab" data-effect="fisheye" onclick="switchEffect('fisheye')">
-      <span class="tab-icon">🐟</span>
-      Eyefisheyd
-      <span class="tab-badge">Text & Image</span>
-    </button>
-  </div>
-</div>
+  <div class="tagline">Dot Art Style Generator</div>
+</header>
 
 <main>
+  <!-- CONTROLS -->
+  <div class="panel">
+    <div class="panel-header">Controls</div>
+    <div class="panel-body">
 
-  <!-- ══════════════ DOTIFY PANEL ══════════════ -->
-  <div class="effect-panel active" id="panel-dotify">
-    <div class="two-col">
-
-      <!-- Left: Controls -->
-      <div style="display:flex;flex-direction:column;gap:14px;">
-
-        <!-- Image Card -->
-        <div class="glass-card">
-          <div class="card-header"><div class="card-title">Image</div></div>
-          <div class="card-body">
-            <div class="upload-section">
-              <div class="upload-zone" id="d-uploadZone">
-                <input type="file" id="d-fileInput" accept="image/*">
-                <div class="upload-icon-wrap">🖼</div>
-                <div class="upload-primary">Choose Image</div>
-                <div class="upload-secondary">or drop here · PNG, JPG, WEBP</div>
-              </div>
-              <div class="thumb-wrap" id="d-thumbWrap" style="margin-top:11px;">
-                <img id="d-thumbImg" src="" alt="">
-                <button class="thumb-replace" id="d-thumbReplace">Replace</button>
-              </div>
-            </div>
+      <!-- Upload -->
+      <div>
+        <div class="control-label" style="margin-bottom:0.6rem;">Image Input</div>
+        <div class="upload-zone" id="uploadZone">
+          <input type="file" id="fileInput" accept="image/*">
+          <div class="upload-icon">⬆</div>
+          <div class="upload-text">
+            <strong>Drop image here</strong>
+            or click to browse · PNG, JPG, WEBP
           </div>
         </div>
+        <div class="thumb-wrap" id="thumbWrap">
+          <img id="thumbImg" src="" alt="preview">
+          <button class="thumb-replace" id="thumbReplace">REPLACE</button>
+        </div>
+      </div>
 
-        <!-- Settings Card -->
-        <div class="glass-card">
-          <div class="card-header"><div class="card-title">Settings</div></div>
-          <div class="card-body">
+      <!-- Dot Size -->
+      <div class="control-group">
+        <div class="control-label">
+          Dot Size
+          <span class="control-value" id="dotSizeVal">4px</span>
+        </div>
+        <input type="range" id="dotSize" min="2" max="16" value="4" step="1">
+      </div>
 
-            <div class="slider-row">
-              <div class="slider-header">
-                <span class="slider-label">Dot Size</span>
-                <span class="slider-value" id="d-dotSizeVal">4px</span>
-              </div>
-              <input type="range" id="d-dotSize" min="2" max="16" value="4" step="1">
-            </div>
+      <!-- Dot Spacing -->
+      <div class="control-group">
+        <div class="control-label">
+          Spacing
+          <span class="control-value" id="spacingVal">6px</span>
+        </div>
+        <input type="range" id="spacing" min="2" max="20" value="6" step="1">
+      </div>
 
-            <div class="slider-row">
-              <div class="slider-header">
-                <span class="slider-label">Spacing</span>
-                <span class="slider-value" id="d-spacingVal">6px</span>
-              </div>
-              <input type="range" id="d-spacing" min="2" max="20" value="6" step="1">
-            </div>
+      <!-- Threshold -->
+      <div class="control-group">
+        <div class="control-label">
+          Darkness Threshold
+          <span class="control-value" id="thresholdVal">128</span>
+        </div>
+        <input type="range" id="threshold" min="30" max="240" value="128" step="1">
+      </div>
 
-            <div class="slider-row" style="border-bottom:none;">
-              <div class="slider-header">
-                <span class="slider-label">Threshold</span>
-                <span class="slider-value" id="d-thresholdVal">128</span>
-              </div>
-              <input type="range" id="d-threshold" min="30" max="240" value="128" step="1">
-            </div>
+      <!-- Dot Shape -->
+      <div class="control-group">
+        <div class="control-label">Dot Shape</div>
+        <div class="shape-row">
+          <button class="shape-btn active" data-shape="circle">● Circle</button>
+          <button class="shape-btn" data-shape="square">■ Square</button>
+          <button class="shape-btn" data-shape="diamond">◆ Diamond</button>
+        </div>
+      </div>
 
-            <div style="height:0.5px;background:var(--separator);margin:0 20px;"></div>
-
-            <div class="segmented-wrap">
-              <div class="seg-label">Shape</div>
-              <div class="segmented">
-                <button class="seg-btn active" data-shape="circle">● Circle</button>
-                <button class="seg-btn" data-shape="square">■ Square</button>
-                <button class="seg-btn" data-shape="diamond">◆ Diamond</button>
-              </div>
-            </div>
-
-            <div style="height:0.5px;background:var(--separator);margin:0 20px;"></div>
-
-            <div class="color-section">
-              <div class="color-label">Dot Color</div>
-              <div class="color-grid">
-                <div class="color-swatch active" data-color="#0a84ff" style="background:linear-gradient(145deg,#3a9fff,#0a6cd8);"></div>
-                <div class="color-swatch" data-color="#ffffff" style="background:linear-gradient(145deg,#fff,#d0d0d5);"></div>
-                <div class="color-swatch" data-color="#ff375f" style="background:linear-gradient(145deg,#ff6680,#e8002a);"></div>
-                <div class="color-swatch" data-color="#ff9500" style="background:linear-gradient(145deg,#ffb340,#e07000);"></div>
-                <div class="color-swatch" data-color="#30d158" style="background:linear-gradient(145deg,#5ee07a,#1aac40);"></div>
-                <div class="color-swatch" data-color="#bf5af2" style="background:linear-gradient(145deg,#d47fff,#9b30d4);"></div>
-                <div class="color-custom">
-                  <input type="color" id="d-customColor" value="#0a84ff">
-                </div>
-              </div>
-            </div>
+      <!-- Dot Color -->
+      <div class="control-group">
+        <div class="control-label">Dot Color</div>
+        <div class="color-row" id="colorRow">
+          <div class="color-swatch active" data-color="#e8ff47" style="background:#e8ff47" title="Lime"></div>
+          <div class="color-swatch" data-color="#ffffff" style="background:#ffffff" title="White"></div>
+          <div class="color-swatch" data-color="#ff6b35" style="background:#ff6b35" title="Orange"></div>
+          <div class="color-swatch" data-color="#00d4ff" style="background:#00d4ff" title="Cyan"></div>
+          <div class="color-swatch" data-color="#ff3b7a" style="background:#ff3b7a" title="Pink"></div>
+          <div class="color-swatch" data-color="#000000" style="background:#000000;border-color:#333" title="Black"></div>
+          <div class="color-custom" title="Custom color">
+            <div class="color-custom-bg"></div>
+            <input type="color" id="customColor" value="#e8ff47">
           </div>
         </div>
       </div>
 
-      <!-- Right: Output -->
-      <div class="output-panel">
-        <div class="output-header">
-          <div class="output-title">Live Preview</div>
-          <div class="output-actions">
-            <button class="btn-action btn-copy" id="d-copyBtn">Copy PNG</button>
-            <button class="btn-action btn-download" id="d-downloadBtn">Save PNG</button>
-          </div>
-        </div>
-        <div class="output-canvas-wrap" id="d-canvasWrap">
-          <div class="empty-state" id="d-emptyState">
-            <div class="empty-icon">●</div>
-            <div class="empty-title">No Image Yet</div>
-            <div class="empty-sub">Upload an image to see<br>your dot art live.</div>
-          </div>
-          <canvas class="output-canvas" id="d-outputCanvas"></canvas>
-          <div class="loading-overlay" id="d-loadingOverlay">
-            <div class="spinner"></div>
-            <div class="loading-text">Rendering…</div>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 
-  <!-- ══════════════ EYEFISHEYD PANEL ══════════════ -->
-  <div class="effect-panel" id="panel-fisheye">
-    <div class="two-col">
-
-      <!-- Left: Controls -->
-      <div style="display:flex;flex-direction:column;gap:14px;">
-
-        <!-- Source selector -->
-        <div class="glass-card">
-          <div class="card-header"><div class="card-title">Source</div></div>
-          <div class="card-body">
-            <div class="fish-source-toggle">
-              <div class="source-tabs">
-                <button class="source-tab active" data-source="text" onclick="switchFishSource('text')">✏️ Text</button>
-                <button class="source-tab" data-source="image" onclick="switchFishSource('image')">🖼 Image</button>
-              </div>
-            </div>
-
-            <!-- Text input section -->
-            <div class="fish-text-section" id="fishTextSection">
-              <div class="text-input-wrap">
-                <div class="text-input-label">Your Text</div>
-                <textarea class="fish-text" id="fishTextInput" placeholder="Type something here…"></textarea>
-              </div>
-
-              <div class="font-picker">
-                <div class="font-picker-label">Font Style</div>
-                <div class="font-grid">
-                  <button class="font-btn active" data-font="sans">Sans-serif</button>
-                  <button class="font-btn" data-font="italic">Italic</button>
-                  <button class="font-btn" data-font="bold">Bold</button>
-                  <button class="font-btn" data-font="mono">Monospace</button>
-                </div>
-              </div>
-
-              <div class="color-section" style="border-top:0.5px solid var(--separator);">
-                <div class="color-label">Text Color</div>
-                <div class="color-grid">
-                  <div class="fish-color-swatch color-swatch active" data-color="#111111" style="background:linear-gradient(145deg,#333,#111);"></div>
-                  <div class="fish-color-swatch color-swatch" data-color="#ffffff" style="background:linear-gradient(145deg,#fff,#d0d0d5);"></div>
-                  <div class="fish-color-swatch color-swatch" data-color="#0a84ff" style="background:linear-gradient(145deg,#3a9fff,#0a6cd8);"></div>
-                  <div class="fish-color-swatch color-swatch" data-color="#ff375f" style="background:linear-gradient(145deg,#ff6680,#e8002a);"></div>
-                  <div class="fish-color-swatch color-swatch" data-color="#bf5af2" style="background:linear-gradient(145deg,#d47fff,#9b30d4);"></div>
-                  <div class="fish-color-swatch color-swatch" data-color="#30d158" style="background:linear-gradient(145deg,#5ee07a,#1aac40);"></div>
-                  <div class="color-custom" id="fishColorCustom">
-                    <input type="color" id="f-customColor" value="#111111">
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Image upload for fish -->
-            <div class="fish-image-section" id="fishImageSection">
-              <div class="upload-zone" id="f-uploadZone">
-                <input type="file" id="f-fileInput" accept="image/*">
-                <div class="upload-icon-wrap">🖼</div>
-                <div class="upload-primary">Choose Image</div>
-                <div class="upload-secondary">or drop here · PNG, JPG, WEBP</div>
-              </div>
-              <div class="thumb-wrap" id="f-thumbWrap" style="margin-top:11px;">
-                <img id="f-thumbImg" src="" alt="">
-                <button class="thumb-replace" id="f-thumbReplace">Replace</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Fish Settings -->
-        <div class="glass-card">
-          <div class="card-header"><div class="card-title">Fish Eye Settings</div></div>
-          <div class="card-body">
-            <div class="slider-row">
-              <div class="slider-header">
-                <span class="slider-label">Distortion</span>
-                <span class="slider-value" id="f-strengthVal">0.65</span>
-              </div>
-              <input type="range" id="f-strength" min="0" max="100" value="65" step="1">
-            </div>
-
-            <div class="slider-row">
-              <div class="slider-header">
-                <span class="slider-label">Lens Radius</span>
-                <span class="slider-value" id="f-radiusVal">0.80</span>
-              </div>
-              <input type="range" id="f-radius" min="30" max="100" value="80" step="1">
-            </div>
-
-            <div class="slider-row" style="border-bottom:none;">
-              <div class="slider-header">
-                <span class="slider-label">Font Size</span>
-                <span class="slider-value" id="f-fontSizeVal">52px</span>
-              </div>
-              <input type="range" id="f-fontSize" min="24" max="120" value="52" step="2">
-            </div>
-          </div>
-        </div>
-
+  <!-- OUTPUT -->
+  <div class="output-panel">
+    <div class="output-header">
+      <div class="output-header-left">Output</div>
+      <div class="output-header-right">
+        <button class="btn-download" id="downloadBtn">↓ Download PNG</button>
+        <button class="btn-download" id="copyBtn">⧉ Copy PNG</button>
       </div>
-
-      <!-- Right: Output -->
-      <div class="output-panel">
-        <div class="output-header">
-          <div class="output-title">Live Preview</div>
-          <div class="output-actions">
-            <button class="btn-action btn-copy" id="f-copyBtn">Copy PNG</button>
-            <button class="btn-action btn-download" id="f-downloadBtn">Save PNG</button>
-          </div>
+    </div>
+    <div class="output-canvas-wrap" id="canvasWrap">
+      <div class="empty-state" id="emptyState">
+        <div class="empty-dots">
+          <div class="empty-dot"></div><div class="empty-dot"></div><div class="empty-dot"></div>
+          <div class="empty-dot"></div><div class="empty-dot"></div><div class="empty-dot"></div>
+          <div class="empty-dot"></div><div class="empty-dot"></div><div class="empty-dot"></div>
+          <div class="empty-dot"></div><div class="empty-dot"></div><div class="empty-dot"></div>
         </div>
-        <div class="output-canvas-wrap" id="f-canvasWrap">
-          <div class="empty-state" id="f-emptyState">
-            <div class="empty-icon">🐟</div>
-            <div class="empty-title">Ready to Distort</div>
-            <div class="empty-sub">Type text or upload an image<br>to apply the fish eye effect.</div>
-          </div>
-          <canvas id="fishCanvas"></canvas>
-          <div class="loading-overlay" id="f-loadingOverlay">
-            <div class="spinner"></div>
-            <div class="loading-text">Distorting…</div>
-          </div>
+        <p>Upload an image to see<br>the live dot art preview.</p>
+      </div>
+      <canvas id="outputCanvas"></canvas>
+      <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-dots">
+          <div class="loading-dot"></div>
+          <div class="loading-dot"></div>
+          <div class="loading-dot"></div>
         </div>
+        <div class="loading-text">Stippling pixels...</div>
       </div>
     </div>
   </div>
-
 </main>
 
-<!-- Hidden canvases -->
-<canvas id="d-hiddenCanvas" style="display:none;"></canvas>
-<canvas id="f-hiddenCanvas" style="display:none;"></canvas>
+<canvas id="hiddenCanvas"></canvas>
 
 <script>
-/* ════════════ EFFECT SWITCHER ════════════ */
-function switchEffect(name) {
-  document.querySelectorAll('.effect-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.effect-tab').forEach(t => t.classList.remove('active'));
-  document.getElementById('panel-' + name).classList.add('active');
-  document.querySelector('[data-effect="' + name + '"]').classList.add('active');
+const fileInput     = document.getElementById('fileInput');
+const uploadZone    = document.getElementById('uploadZone');
+const thumbWrap     = document.getElementById('thumbWrap');
+const thumbImg      = document.getElementById('thumbImg');
+const thumbReplace  = document.getElementById('thumbReplace');
+const downloadBtn   = document.getElementById('downloadBtn');
+const copyBtn       = document.getElementById('copyBtn');
+const outputCanvas  = document.getElementById('outputCanvas');
+const hiddenCanvas  = document.getElementById('hiddenCanvas');
+const emptyState    = document.getElementById('emptyState');
+const loadingOverlay = document.getElementById('loadingOverlay');
+
+const dotSizeSlider  = document.getElementById('dotSize');
+const spacingSlider  = document.getElementById('spacing');
+const thresholdSlider = document.getElementById('threshold');
+const dotSizeVal     = document.getElementById('dotSizeVal');
+const spacingVal     = document.getElementById('spacingVal');
+const thresholdVal   = document.getElementById('thresholdVal');
+const customColorInput = document.getElementById('customColor');
+
+let currentImage  = null;
+let selectedColor = '#e8ff47';
+let selectedShape = 'circle';
+let debounceTimer = null;
+// Cache pixel data so we don't re-read the image on every slider move
+let cachedPixels  = null;
+let cachedW = 0, cachedH = 0;
+
+// ── Range sliders ────────────────────────────────────────────────────────────
+function updateRange(slider, display, suffix) {
+  const pct = ((slider.value - slider.min) / (slider.max - slider.min)) * 100;
+  slider.style.setProperty('--pct', pct + '%');
+  display.textContent = slider.value + suffix;
 }
 
-/* ════════════ DOTIFY ════════════ */
-(function() {
-  const fileInput      = document.getElementById('d-fileInput');
-  const uploadZone     = document.getElementById('d-uploadZone');
-  const thumbWrap      = document.getElementById('d-thumbWrap');
-  const thumbImg       = document.getElementById('d-thumbImg');
-  const thumbReplace   = document.getElementById('d-thumbReplace');
-  const downloadBtn    = document.getElementById('d-downloadBtn');
-  const copyBtn        = document.getElementById('d-copyBtn');
-  const outputCanvas   = document.getElementById('d-outputCanvas');
-  const hiddenCanvas   = document.getElementById('d-hiddenCanvas');
-  const emptyState     = document.getElementById('d-emptyState');
-  const loadingOverlay = document.getElementById('d-loadingOverlay');
-  const dotSizeSlider  = document.getElementById('d-dotSize');
-  const spacingSlider  = document.getElementById('d-spacing');
-  const thresholdSlider= document.getElementById('d-threshold');
-  const dotSizeVal     = document.getElementById('d-dotSizeVal');
-  const spacingVal     = document.getElementById('d-spacingVal');
-  const thresholdVal   = document.getElementById('d-thresholdVal');
-  const customColorInput = document.getElementById('d-customColor');
-
-  let currentImage  = null;
-  let selectedColor = '#0a84ff';
-  let selectedShape = 'circle';
-  let debounceTimer = null;
-  let cachedPixels  = null;
-  let cachedW = 0, cachedH = 0;
-
-  function updateRange(slider, display, suffix) {
-    const pct = ((slider.value - slider.min) / (slider.max - slider.min)) * 100;
-    slider.style.setProperty('--pct', pct + '%');
-    display.textContent = slider.value + suffix;
-  }
-
-  [dotSizeSlider, spacingSlider, thresholdSlider].forEach(s => {
-    s.addEventListener('input', () => {
-      updateRange(dotSizeSlider, dotSizeVal, 'px');
-      updateRange(spacingSlider, spacingVal, 'px');
-      updateRange(thresholdSlider, thresholdVal, '');
-      scheduleRender();
-    });
-  });
-  updateRange(dotSizeSlider, dotSizeVal, 'px');
-  updateRange(spacingSlider, spacingVal, 'px');
-  updateRange(thresholdSlider, thresholdVal, '');
-
-  document.querySelectorAll('.color-swatch:not(.fish-color-swatch)').forEach(s => {
-    s.addEventListener('click', () => {
-      document.querySelectorAll('.color-swatch:not(.fish-color-swatch)').forEach(x => x.classList.remove('active'));
-      s.classList.add('active');
-      selectedColor = s.dataset.color;
-      scheduleRender();
-    });
-  });
-  customColorInput.addEventListener('input', () => {
-    document.querySelectorAll('.color-swatch:not(.fish-color-swatch)').forEach(x => x.classList.remove('active'));
-    selectedColor = customColorInput.value;
+[dotSizeSlider, spacingSlider, thresholdSlider].forEach(s => {
+  s.addEventListener('input', () => {
+    updateRange(dotSizeSlider, dotSizeVal, 'px');
+    updateRange(spacingSlider, spacingVal, 'px');
+    updateRange(thresholdSlider, thresholdVal, '');
     scheduleRender();
   });
+});
 
-  document.querySelectorAll('#panel-dotify .seg-btn').forEach(b => {
-    b.addEventListener('click', () => {
-      document.querySelectorAll('#panel-dotify .seg-btn').forEach(x => x.classList.remove('active'));
-      b.classList.add('active');
-      selectedShape = b.dataset.shape;
-      scheduleRender();
-    });
+updateRange(dotSizeSlider, dotSizeVal, 'px');
+updateRange(spacingSlider, spacingVal, 'px');
+updateRange(thresholdSlider, thresholdVal, '');
+
+// ── Color swatches ───────────────────────────────────────────────────────────
+document.querySelectorAll('.color-swatch').forEach(s => {
+  s.addEventListener('click', () => {
+    document.querySelectorAll('.color-swatch').forEach(x => x.classList.remove('active'));
+    s.classList.add('active');
+    selectedColor = s.dataset.color;
+    scheduleRender();
   });
+});
 
-  uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
-  uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
-  uploadZone.addEventListener('drop', e => {
-    e.preventDefault(); uploadZone.classList.remove('drag-over');
-    const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith('image/')) loadImage(file);
+customColorInput.addEventListener('input', () => {
+  document.querySelectorAll('.color-swatch').forEach(x => x.classList.remove('active'));
+  selectedColor = customColorInput.value;
+  scheduleRender();
+});
+
+// ── Shape buttons ────────────────────────────────────────────────────────────
+document.querySelectorAll('.shape-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.shape-btn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    selectedShape = b.dataset.shape;
+    scheduleRender();
   });
-  fileInput.addEventListener('change', () => { if (fileInput.files[0]) loadImage(fileInput.files[0]); });
-  thumbReplace.addEventListener('click', () => fileInput.click());
+});
 
-  function loadImage(file) {
-    const reader = new FileReader();
-    reader.onload = e => {
-      const img = new Image();
-      img.onload = () => {
-        currentImage = img;
-        thumbImg.src = e.target.result;
-        thumbWrap.style.display = 'block';
-        uploadZone.style.display = 'none';
-        cachePixels();
-        scheduleRender(0);
-      };
-      img.src = e.target.result;
+// ── Drag & drop / file input ─────────────────────────────────────────────────
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) loadImage(file);
+});
+
+fileInput.addEventListener('change', () => { if (fileInput.files[0]) loadImage(fileInput.files[0]); });
+thumbReplace.addEventListener('click', () => fileInput.click());
+
+function loadImage(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      currentImage = img;
+      thumbImg.src = e.target.result;
+      thumbWrap.style.display = 'block';
+      uploadZone.style.display = 'none';
+      // Pre-cache pixel data at render resolution
+      cachePixels();
+      scheduleRender(0); // render immediately on load
     };
-    reader.readAsDataURL(file);
-  }
-
-  function cachePixels() {
-    const maxW = 900, maxH = 900;
-    let sw = currentImage.width, sh = currentImage.height;
-    if (sw > maxW) { sh = Math.round(sh * maxW / sw); sw = maxW; }
-    if (sh > maxH) { sw = Math.round(sw * maxH / sh); sh = maxH; }
-    hiddenCanvas.width = sw; hiddenCanvas.height = sh;
-    const hCtx = hiddenCanvas.getContext('2d');
-    hCtx.drawImage(currentImage, 0, 0, sw, sh);
-    cachedPixels = hCtx.getImageData(0, 0, sw, sh).data;
-    cachedW = sw; cachedH = sh;
-  }
-
-  function scheduleRender(delay = 60) {
-    if (!currentImage) return;
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(renderDotArt, delay);
-  }
-
-  function renderDotArt() {
-    if (!currentImage || !cachedPixels) return;
-    loadingOverlay.style.display = 'flex';
-    requestAnimationFrame(() => {
-      const dotSize   = parseInt(dotSizeSlider.value);
-      const spacing   = parseInt(spacingSlider.value);
-      const threshold = parseInt(thresholdSlider.value);
-      const step = dotSize + spacing, half = dotSize / 2;
-      outputCanvas.width  = cachedW;
-      outputCanvas.height = cachedH;
-      const ctx = outputCanvas.getContext('2d');
-      ctx.clearRect(0, 0, cachedW, cachedH);
-      ctx.fillStyle = selectedColor;
-      for (let y = half; y < cachedH - half; y += step) {
-        for (let x = half; x < cachedW - half; x += step) {
-          const px = Math.floor(x), py = Math.floor(y);
-          const i  = (py * cachedW + px) * 4;
-          if (cachedPixels[i + 3] < 30) continue;
-          const brightness = 0.299 * cachedPixels[i] + 0.587 * cachedPixels[i+1] + 0.114 * cachedPixels[i+2];
-          if (brightness > threshold) continue;
-          const darkness = 1 - brightness / threshold;
-          const r2 = half * (0.4 + 0.6 * darkness);
-          ctx.beginPath();
-          if (selectedShape === 'circle') {
-            ctx.arc(x, y, r2, 0, Math.PI * 2);
-          } else if (selectedShape === 'square') {
-            ctx.rect(x - r2, y - r2, r2 * 2, r2 * 2);
-          } else {
-            ctx.moveTo(x, y - r2); ctx.lineTo(x + r2, y);
-            ctx.lineTo(x, y + r2); ctx.lineTo(x - r2, y);
-            ctx.closePath();
-          }
-          ctx.fill();
-        }
-      }
-      loadingOverlay.style.display = 'none';
-      emptyState.style.display     = 'none';
-      outputCanvas.style.display   = 'block';
-      downloadBtn.style.display    = 'inline-block';
-      copyBtn.style.display        = 'inline-block';
-    });
-  }
-
-  downloadBtn.addEventListener('click', () => {
-    const link = document.createElement('a');
-    link.download = 'effectify-dot.png';
-    link.href = outputCanvas.toDataURL('image/png');
-    link.click();
-  });
-  copyBtn.addEventListener('click', async () => {
-    try {
-      const blob = await new Promise(res => outputCanvas.toBlob(res, 'image/png'));
-      await navigator.clipboard.write([new ClipboardItem({'image/png': blob})]);
-      copyBtn.textContent = '✓ Copied!'; copyBtn.classList.add('success');
-      setTimeout(() => { copyBtn.textContent = 'Copy PNG'; copyBtn.classList.remove('success'); }, 1800);
-    } catch {
-      copyBtn.textContent = 'Failed';
-      setTimeout(() => { copyBtn.textContent = 'Copy PNG'; }, 1800);
-    }
-  });
-})();
-
-/* ════════════ EYEFISHEYD ════════════ */
-(function() {
-  const fishCanvas     = document.getElementById('fishCanvas');
-  const hiddenCanvas   = document.getElementById('f-hiddenCanvas');
-  const emptyState     = document.getElementById('f-emptyState');
-  const loadingOverlay = document.getElementById('f-loadingOverlay');
-  const downloadBtn    = document.getElementById('f-downloadBtn');
-  const copyBtn        = document.getElementById('f-copyBtn');
-  const textInput      = document.getElementById('fishTextInput');
-  const strengthSlider = document.getElementById('f-strength');
-  const radiusSlider   = document.getElementById('f-radius');
-  const fontSizeSlider = document.getElementById('f-fontSize');
-  const strengthVal    = document.getElementById('f-strengthVal');
-  const radiusVal      = document.getElementById('f-radiusVal');
-  const fontSizeVal    = document.getElementById('f-fontSizeVal');
-  const customColorInput = document.getElementById('f-customColor');
-
-  const fileInput    = document.getElementById('f-fileInput');
-  const uploadZone   = document.getElementById('f-uploadZone');
-  const thumbWrap    = document.getElementById('f-thumbWrap');
-  const thumbImg     = document.getElementById('f-thumbImg');
-  const thumbReplace = document.getElementById('f-thumbReplace');
-
-  let fishSource = 'text';  // 'text' | 'image'
-  let fishImage  = null;
-  let fishColor  = '#111111';
-  let fishFont   = 'sans';
-  let debounceTimer = null;
-
-  function updateRange(slider, display, suffix, scale) {
-    const pct = ((slider.value - slider.min) / (slider.max - slider.min)) * 100;
-    slider.style.setProperty('--pct', pct + '%');
-    const v = scale ? (slider.value / 100).toFixed(2) : slider.value + suffix;
-    display.textContent = v;
-  }
-
-  [strengthSlider, radiusSlider].forEach(s => s.addEventListener('input', () => {
-    updateRange(strengthSlider, strengthVal, '', true);
-    updateRange(radiusSlider, radiusVal, '', true);
-    scheduleRender();
-  }));
-  fontSizeSlider.addEventListener('input', () => {
-    updateRange(fontSizeSlider, fontSizeVal, 'px', false);
-    scheduleRender();
-  });
-
-  updateRange(strengthSlider, strengthVal, '', true);
-  updateRange(radiusSlider, radiusVal, '', true);
-  updateRange(fontSizeSlider, fontSizeVal, 'px', false);
-
-  textInput.addEventListener('input', scheduleRender);
-
-  document.querySelectorAll('.fish-color-swatch').forEach(s => {
-    s.addEventListener('click', () => {
-      document.querySelectorAll('.fish-color-swatch').forEach(x => x.classList.remove('active'));
-      s.classList.add('active');
-      fishColor = s.dataset.color;
-      scheduleRender();
-    });
-  });
-  customColorInput.addEventListener('input', () => {
-    document.querySelectorAll('.fish-color-swatch').forEach(x => x.classList.remove('active'));
-    fishColor = customColorInput.value;
-    scheduleRender();
-  });
-
-  document.querySelectorAll('.font-btn').forEach(b => {
-    b.addEventListener('click', () => {
-      document.querySelectorAll('.font-btn').forEach(x => x.classList.remove('active'));
-      b.classList.add('active');
-      fishFont = b.dataset.font;
-      scheduleRender();
-    });
-  });
-
-  // Image upload for fish
-  uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
-  uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
-  uploadZone.addEventListener('drop', e => {
-    e.preventDefault(); uploadZone.classList.remove('drag-over');
-    const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith('image/')) loadFishImage(file);
-  });
-  fileInput.addEventListener('change', () => { if (fileInput.files[0]) loadFishImage(fileInput.files[0]); });
-  thumbReplace.addEventListener('click', () => fileInput.click());
-
-  function loadFishImage(file) {
-    const reader = new FileReader();
-    reader.onload = e => {
-      const img = new Image();
-      img.onload = () => {
-        fishImage = img;
-        thumbImg.src = e.target.result;
-        thumbWrap.style.display = 'block';
-        uploadZone.style.display = 'none';
-        scheduleRender(0);
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  }
-
-  function scheduleRender(delay = 80) {
-    if (fishSource === 'text' && !textInput.value.trim()) return;
-    if (fishSource === 'image' && !fishImage) return;
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(renderFish, delay);
-  }
-
-  function applyFishEye(srcCanvas, strength, lensRadius) {
-    const W = srcCanvas.width, H = srcCanvas.height;
-    const src = srcCanvas.getContext('2d').getImageData(0, 0, W, H);
-    const dst = new ImageData(W, H);
-    const cx = W / 2, cy = H / 2;
-    const maxR = Math.min(W, H) / 2 * lensRadius;
-
-    for (let y = 0; y < H; y++) {
-      for (let x = 0; x < W; x++) {
-        const dx = x - cx, dy = y - cy;
-        const r  = Math.sqrt(dx * dx + dy * dy);
-
-        let sx, sy;
-        if (r < maxR) {
-          // Spherical / fisheye remapping
-          const normR = r / maxR;
-          const theta = Math.atan2(dy, dx);
-          const distortedR = Math.pow(normR, 1 + strength) * maxR;
-          sx = cx + distortedR * Math.cos(theta);
-          sy = cy + distortedR * Math.sin(theta);
-        } else {
-          sx = x; sy = y;
-        }
-
-        const si = (Math.min(H-1,Math.max(0,Math.round(sy))) * W + Math.min(W-1,Math.max(0,Math.round(sx)))) * 4;
-        const di = (y * W + x) * 4;
-        dst.data[di]   = src.data[si];
-        dst.data[di+1] = src.data[si+1];
-        dst.data[di+2] = src.data[si+2];
-        dst.data[di+3] = src.data[si+3];
-      }
-    }
-    return dst;
-  }
-
-  function renderFish() {
-    const strength  = parseFloat(strengthSlider.value) / 100 * 1.8;  // 0..1.8
-    const lensR     = parseFloat(radiusSlider.value) / 100;
-    const fontSize  = parseInt(fontSizeSlider.value);
-
-    loadingOverlay.style.display = 'flex';
-
-    requestAnimationFrame(() => {
-      const SIZE = 600;
-
-      // Step 1: draw source onto hiddenCanvas
-      hiddenCanvas.width = SIZE; hiddenCanvas.height = SIZE;
-      const hCtx = hiddenCanvas.getContext('2d');
-      hCtx.clearRect(0, 0, SIZE, SIZE);
-
-      if (fishSource === 'text') {
-        const text = textInput.value.trim();
-        if (!text) { loadingOverlay.style.display='none'; return; }
-
-        // White background for text
-        hCtx.fillStyle = '#ffffff';
-        hCtx.fillRect(0, 0, SIZE, SIZE);
-
-        // Build font string
-        let fontStr = '';
-        if (fishFont === 'italic') fontStr = `italic ${fontSize}px -apple-system, Georgia, serif`;
-        else if (fishFont === 'bold') fontStr = `700 ${fontSize}px -apple-system, system-ui, sans-serif`;
-        else if (fishFont === 'mono') fontStr = `${fontSize}px 'SF Mono', 'Fira Code', monospace`;
-        else fontStr = `${fontSize}px -apple-system, system-ui, sans-serif`;
-
-        hCtx.font = fontStr;
-        hCtx.fillStyle = fishColor;
-        hCtx.textAlign = 'center';
-        hCtx.textBaseline = 'middle';
-
-        // Word-wrap
-        const words = text.split(' ');
-        const maxW  = SIZE * 0.88;
-        const lineH = fontSize * 1.32;
-        let lines = [], line = '';
-        for (const w of words) {
-          const test = line ? line + ' ' + w : w;
-          if (hCtx.measureText(test).width > maxW && line) {
-            lines.push(line); line = w;
-          } else { line = test; }
-        }
-        if (line) lines.push(line);
-
-        const totalH = lines.length * lineH;
-        const startY = (SIZE - totalH) / 2 + lineH / 2;
-        lines.forEach((l, i) => hCtx.fillText(l, SIZE / 2, startY + i * lineH));
-
-      } else {
-        // Image mode
-        if (!fishImage) { loadingOverlay.style.display='none'; return; }
-        // Fit image
-        const aspect = fishImage.width / fishImage.height;
-        let dw = SIZE, dh = SIZE;
-        if (aspect > 1) dh = SIZE / aspect;
-        else dw = SIZE * aspect;
-        const ox = (SIZE - dw) / 2, oy = (SIZE - dh) / 2;
-        hCtx.fillStyle = '#ffffff';
-        hCtx.fillRect(0, 0, SIZE, SIZE);
-        hCtx.drawImage(fishImage, ox, oy, dw, dh);
-      }
-
-      // Step 2: apply fisheye
-      const distorted = applyFishEye(hiddenCanvas, strength, lensR);
-
-      // Step 3: write to output
-      fishCanvas.width  = SIZE;
-      fishCanvas.height = SIZE;
-      fishCanvas.getContext('2d').putImageData(distorted, 0, 0);
-
-      loadingOverlay.style.display = 'none';
-      emptyState.style.display     = 'none';
-      fishCanvas.style.display     = 'block';
-      downloadBtn.style.display    = 'inline-block';
-      copyBtn.style.display        = 'inline-block';
-    });
-  }
-
-  downloadBtn.addEventListener('click', () => {
-    const link = document.createElement('a');
-    link.download = 'effectify-fisheye.png';
-    link.href = fishCanvas.toDataURL('image/png');
-    link.click();
-  });
-  copyBtn.addEventListener('click', async () => {
-    try {
-      const blob = await new Promise(res => fishCanvas.toBlob(res, 'image/png'));
-      await navigator.clipboard.write([new ClipboardItem({'image/png': blob})]);
-      copyBtn.textContent = '✓ Copied!'; copyBtn.classList.add('success');
-      setTimeout(() => { copyBtn.textContent = 'Copy PNG'; copyBtn.classList.remove('success'); }, 1800);
-    } catch {
-      copyBtn.textContent = 'Failed';
-      setTimeout(() => { copyBtn.textContent = 'Copy PNG'; }, 1800);
-    }
-  });
-
-  // auto-render on text source when panel switches
-  document.querySelector('[data-effect="fisheye"]').addEventListener('click', () => {
-    if (fishSource === 'text' && textInput.value.trim()) scheduleRender(100);
-  });
-})();
-
-/* ════════════ FISH SOURCE TOGGLE ════════════ */
-function switchFishSource(src) {
-  document.querySelectorAll('.source-tab').forEach(t => t.classList.remove('active'));
-  document.querySelector('[data-source="' + src + '"]').classList.add('active');
-  const textSec  = document.getElementById('fishTextSection');
-  const imgSec   = document.getElementById('fishImageSection');
-  const empty    = document.getElementById('f-emptyState');
-  const canvas   = document.getElementById('fishCanvas');
-  const dl       = document.getElementById('f-downloadBtn');
-  const cp       = document.getElementById('f-copyBtn');
-
-  if (src === 'text') {
-    textSec.classList.remove('hidden');
-    imgSec.classList.remove('visible');
-    window._fishSource = 'text';
-  } else {
-    textSec.classList.add('hidden');
-    imgSec.classList.add('visible');
-    window._fishSource = 'image';
-    // reset preview if switching to image with no image
-    const fi = document.getElementById('f-fileInput');
-    if (!fi.files.length) {
-      canvas.style.display = 'none';
-      empty.style.display  = 'block';
-      dl.style.display     = cp.style.display = 'none';
-    }
-  }
-  // patch the closure variable
-  const patch = new Event('_patchsource');
-  patch.src = src;
-  document.dispatchEvent(patch);
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
 }
 
-// Patch fish source variable from outside closure
-(function() {
-  document.addEventListener('_patchsource', e => {
-    // re-run by mutating slider — triggers scheduleRender check internally
-    // We expose fishSource via a global so the inner closure can see updates
-  });
-  // Override scheduleRender to check global
-  const origSched = window._fishScheduleRender;
-})();
+// ── Pixel cache ──────────────────────────────────────────────────────────────
+function cachePixels() {
+  const maxW = 900, maxH = 900;
+  let sw = currentImage.width, sh = currentImage.height;
+  if (sw > maxW) { sh = Math.round(sh * maxW / sw); sw = maxW; }
+  if (sh > maxH) { sw = Math.round(sw * maxH / sh); sh = maxH; }
 
-// Simpler approach: re-expose fishSource globally
-(function() {
-  let _src = 'text';
-  Object.defineProperty(window, '_fishSource', {
-    get: () => _src,
-    set: v  => { _src = v; }
+  hiddenCanvas.width = sw;
+  hiddenCanvas.height = sh;
+  const hCtx = hiddenCanvas.getContext('2d');
+  hCtx.drawImage(currentImage, 0, 0, sw, sh);
+  cachedPixels = hCtx.getImageData(0, 0, sw, sh).data;
+  cachedW = sw;
+  cachedH = sh;
+}
+
+// ── Debounced render scheduler ───────────────────────────────────────────────
+function scheduleRender(delay = 60) {
+  if (!currentImage) return;
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(renderDotArt, delay);
+}
+
+// ── Core render ──────────────────────────────────────────────────────────────
+function renderDotArt() {
+  if (!currentImage || !cachedPixels) return;
+
+  // Show subtle spinner only for first render; after that it's fast enough
+  loadingOverlay.style.display = 'flex';
+
+  // Use requestAnimationFrame so the spinner actually paints before heavy work
+  requestAnimationFrame(() => {
+    const dotSize  = parseInt(dotSizeSlider.value);
+    const spacing  = parseInt(spacingSlider.value);
+    const threshold = parseInt(thresholdSlider.value);
+    const step = dotSize + spacing;
+    const half = dotSize / 2;
+
+    outputCanvas.width  = cachedW;
+    outputCanvas.height = cachedH;
+    const ctx = outputCanvas.getContext('2d');
+    ctx.clearRect(0, 0, cachedW, cachedH);
+    ctx.fillStyle = selectedColor;
+
+    for (let y = half; y < cachedH - half; y += step) {
+      for (let x = half; x < cachedW - half; x += step) {
+        const px = Math.floor(x), py = Math.floor(y);
+        const i  = (py * cachedW + px) * 4;
+        if (cachedPixels[i + 3] < 30) continue;
+
+        const brightness = 0.299 * cachedPixels[i] + 0.587 * cachedPixels[i+1] + 0.114 * cachedPixels[i+2];
+        if (brightness > threshold) continue;
+
+        const darkness = 1 - brightness / threshold;
+        const r2 = half * (0.4 + 0.6 * darkness);
+
+        ctx.beginPath();
+        if (selectedShape === 'circle') {
+          ctx.arc(x, y, r2, 0, Math.PI * 2);
+        } else if (selectedShape === 'square') {
+          ctx.rect(x - r2, y - r2, r2 * 2, r2 * 2);
+        } else if (selectedShape === 'diamond') {
+          ctx.moveTo(x, y - r2);
+          ctx.lineTo(x + r2, y);
+          ctx.lineTo(x, y + r2);
+          ctx.lineTo(x - r2, y);
+          ctx.closePath();
+        }
+        ctx.fill();
+      }
+    }
+
+    loadingOverlay.style.display = 'none';
+    emptyState.style.display     = 'none';
+    outputCanvas.style.display   = 'block';
+    downloadBtn.style.display    = 'inline-block';
+    copyBtn.style.display        = 'inline-block';
   });
-  // Patch the inner closure by overriding switchFishSource to also dispatch an event
-  // that the canvas re-checks the source  — it's self-contained, so we just reset state
-})();
+}
+
+// ── Copy to clipboard ─────────────────────────────────────────────────────────
+copyBtn.addEventListener('click', async () => {
+  try {
+    const blob = await new Promise(res => outputCanvas.toBlob(res, 'image/png'));
+    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+    const orig = copyBtn.textContent;
+    copyBtn.textContent = '✓ Copied!';
+    copyBtn.style.borderColor = 'var(--accent)';
+    copyBtn.style.color = 'var(--accent)';
+    setTimeout(() => {
+      copyBtn.textContent = orig;
+      copyBtn.style.borderColor = '';
+      copyBtn.style.color = '';
+    }, 1800);
+  } catch (e) {
+    copyBtn.textContent = '✗ Failed';
+    setTimeout(() => { copyBtn.textContent = '⧉ Copy PNG'; }, 1800);
+  }
+});
+downloadBtn.addEventListener('click', () => {
+  const link = document.createElement('a');
+  link.download = 'dotify-art.png';
+  link.href = outputCanvas.toDataURL('image/png');
+  link.click();
+});
 </script>
 </body>
 </html>
