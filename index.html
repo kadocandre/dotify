@@ -815,10 +815,28 @@ copyBtn.addEventListener('click', async () => {
     setTimeout(() => { copyBtn.textContent = '⧉ Copy PNG'; }, 1800);
   }
 });
-downloadBtn.addEventListener('click', () => {
+downloadBtn.addEventListener('click', async () => {
+  const blob = await new Promise(resolve =>
+    outputCanvas.toBlob(resolve, 'image/png')
+  );
+
+  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+  if (isIOS && navigator.canShare) {
+    const file = new File([blob], 'dotify-art.png', {
+      type: 'image/png'
+    });
+
+    await navigator.share({
+      files: [file]
+    });
+    return;
+  }
+
+  // desktop/android
   const link = document.createElement('a');
   link.download = 'dotify-art.png';
-  link.href = outputCanvas.toDataURL('image/png');
+  link.href = URL.createObjectURL(blob);
   link.click();
 });
 </script>
