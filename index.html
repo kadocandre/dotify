@@ -819,25 +819,25 @@ downloadBtn.addEventListener('click', async () => {
   const blob = await new Promise(resolve =>
     outputCanvas.toBlob(resolve, 'image/png')
   );
-  
-if (navigator.canShare?.({ files: [file] })) {
-  const file = new File([blob], 'dotify-art.png', {
-    type: 'image/png'
-  });
+
+  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+  if (isIOS && navigator.canShare) {
+    const file = new File([blob], 'dotify-art.png', {
+      type: 'image/png'
+    });
 
     await navigator.share({
-      files: [file],
-      title: 'Dotify Art'
+      files: [file]
     });
     return;
-} 
-  
-    // fallback desktop
-    const link = document.createElement('a');
-    link.download = 'dotify-art.png';
-    link.href = URL.createObjectURL(blob);
-    link.click();
   }
+
+  // desktop/android
+  const link = document.createElement('a');
+  link.download = 'dotify-art.png';
+  link.href = URL.createObjectURL(blob);
+  link.click();
 });
 </script>
 </body>
