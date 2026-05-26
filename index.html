@@ -830,30 +830,36 @@ downloadBtn.addEventListener('click', async () => {
       type: 'image/png'
     });
 
-    // Mobile-native sharing (iPhone + Android)
+    // Detect mobile devices only
+    const isMobile =
+      /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    // Use native share ONLY on mobile
     if (
+      isMobile &&
       navigator.canShare &&
       navigator.canShare({ files: [file] })
     ) {
       await navigator.share({
         files: [file],
-        title: 'Dotify Art',
-        text: 'Save your artwork'
+        title: 'Dotify Art'
       });
 
       return;
     }
 
-    // Fallback for desktop / unsupported browsers
+    // Desktop fallback → normal download
+    const url = URL.createObjectURL(blob);
+
     const link = document.createElement('a');
+    link.href = url;
     link.download = 'dotify-art.png';
-    link.href = URL.createObjectURL(blob);
 
     document.body.appendChild(link);
     link.click();
     link.remove();
 
-    URL.revokeObjectURL(link.href);
+    URL.revokeObjectURL(url);
 
   } catch (err) {
     console.error('Download/share failed:', err);
