@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="icon" type="image/png" href="favicon.png">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dot·ify - Dot Art Generator</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;500;600;700;800&display=swap');
+
+  :root {
+    --bg: #0e0e0e;
+    --surface: #161616;
+    --surface2: #1e1e1e;
+    --border: #2a2a2a;
+    --accent: #ffff7b;
+    --accent2: #ffff7b;
+    --text: #f0f0f0;
+    --text-muted: #666;
+    --dot-preview: #ffff7b;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid bg */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 48px 48px;
+    opacity: 0.4;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  header {
+    position: relative;
+    z-index: 1;
+    padding: 1rem 2rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .logo span.accent { color: var(--accent); }
+
+  .logo-icon {
+    width: 34px; height: 34px;
+    border-radius: 9px;
+    background: linear-gradient(135deg, #3a6ee8 0%, #1e3fa8 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 12px rgba(58,110,232,0.45);
+    flex-shrink: 0;
+  }
+
+  .logo-icon svg {
+    width: 18px; height: 18px;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.4); opacity: 0.7; }
+  }
+
+  main {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 3rem 2rem;
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 2rem;
+    align-items: start;
+  }
+
+  /* CONTROLS PANEL */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .panel-header::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  .panel-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; }
+
+  /* UPLOAD ZONE */
+  .upload-zone {
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    padding: 2rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    background: var(--bg);
+  }
+
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--accent);
+    background: rgba(255, 255, 123, 0.03);
+  }
+
+  .upload-zone input[type=file] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .upload-icon {
+    width: 48px; height: 48px;
+    margin: 0 auto 1rem;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    color: var(--text-muted);
+    transition: all 0.2s;
+  }
+
+  .upload-zone:hover .upload-icon {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .upload-text {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  .upload-text strong { color: var(--text); display: block; margin-bottom: 0.25rem; font-size: 0.85rem; }
+
+  /* PREVIEW THUMB */
+  .thumb-wrap {
+    display: none;
+    position: relative;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    background: repeating-conic-gradient(#1e1e1e 0% 25%, #161616 0% 50%) 0 0 / 16px 16px;
+  }
+
+  .thumb-wrap img {
+    width: 100%;
+    height: 160px;
+    object-fit: contain;
+    display: block;
+  }
+
+  .thumb-replace {
+    position: absolute;
+    top: 6px; right: 6px;
+    background: rgba(0,0,0,0.7);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    padding: 4px 8px;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    transition: all 0.15s;
+  }
+
+  .thumb-replace:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* CONTROLS */
+  .control-group { display: flex; flex-direction: column; gap: 0.6rem; }
+
+  .control-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .control-value {
+    color: var(--accent);
+    font-size: 0.72rem;
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 2px;
+    background: var(--border);
+    outline: none;
+    border-radius: 0;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: 2px solid var(--bg);
+    box-shadow: 0 0 0 1px var(--accent);
+  }
+
+  input[type=range]::-webkit-slider-runnable-track {
+    background: linear-gradient(to right, var(--accent) 0%, var(--accent) var(--pct, 0%), var(--border) var(--pct, 0%));
+    height: 2px;
+  }
+
+  /* COLOR PICKER */
+  .color-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .color-swatch {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  .color-swatch:hover { transform: scale(1.15); }
+  .color-swatch.active { border-color: var(--text); transform: scale(1.1); }
+
+  .color-custom {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 2px dashed var(--border);
+    cursor: pointer;
+    overflow: hidden;
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .color-custom input[type=color] {
+    position: absolute;
+    inset: -4px;
+    width: calc(100% + 8px);
+    height: calc(100% + 8px);
+    opacity: 0;
+    cursor: pointer;
+  }
+
+
+  /* SHAPE TOGGLE */
+  .shape-row { display: flex; gap: 0.5rem; }
+
+  .shape-btn {
+    flex: 1;
+    padding: 0.5rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+  }
+
+  .shape-btn:hover { border-color: var(--text-muted); color: var(--text); }
+  .shape-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(255,255,123,0.05); }
+
+  /* GENERATE BTN */
+  .btn-generate {
+    width: 100%;
+    padding: 0.9rem;
+    background: var(--accent);
+    color: #0e0e0e;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-generate:hover { background: #fff; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(255,255,123,0.25); }
+  .btn-generate:active { transform: translateY(0); }
+  .btn-generate:disabled { background: var(--border); color: var(--text-muted); cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* OUTPUT PANEL */
+  .output-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    min-height: 500px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .output-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .output-header-right { display: flex; gap: 0.5rem; align-items: center; }
+
+  .output-header-left { display: flex; align-items: center; gap: 0.5rem; }
+  .output-header-left::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent2);
+  }
+
+  .btn-download {
+    padding: 0.35rem 0.8rem;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: none;
+  }
+
+  .btn-download:hover { border-color: var(--accent); color: var(--accent); }
+
+  .output-canvas-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: repeating-conic-gradient(#1a1a1a 0% 25%, #161616 0% 50%) 0 0 / 20px 20px;
+    position: relative;
+  }
+
+  .empty-state {
+    text-align: center;
+    color: var(--text-muted);
+  }
+
+  .empty-dots {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+    width: 80px;
+    margin: 0 auto 1.2rem;
+    opacity: 0.3;
+  }
+
+  .empty-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    animation: fadeIn 1s ease-in-out infinite alternate;
+  }
+
+  .empty-dot:nth-child(odd) { animation-delay: 0.3s; }
+  .empty-dot:nth-child(3n) { animation-delay: 0.6s; }
+
+  @keyframes fadeIn {
+    from { opacity: 0.2; }
+    to { opacity: 1; }
+  }
+
+  .empty-state p { font-size: 0.75rem; line-height: 1.7; }
+
+  #outputCanvas { max-width: 100%; max-height: 520px; display: none; image-rendering: pixelated; }
+
+  /* Loading */
+  .loading-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(14,14,14,0.85);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 1rem;
+    z-index: 5;
+  }
+
+  .loading-dots {
+    display: flex;
+    gap: 6px;
+  }
+
+  .loading-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: bounce 0.9s ease-in-out infinite;
+  }
+
+  .loading-dot:nth-child(2) { animation-delay: 0.15s; }
+  .loading-dot:nth-child(3) { animation-delay: 0.3s; }
+
+  @keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-10px); }
+  }
+
+  .loading-text {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    letter-spacing: 0.08em;
+  }
+
+  .live-tag {
+    display: inline-block;
+    background: #ffff7b;
+    color: #0e0e0e;
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 3px;
+    margin-left: 0.4rem;
+    vertical-align: middle;
+    line-height: 1.6;
+  }
+
+  .preview-bg-toggle {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+    margin-bottom: 0;
+  }
+
+  .bg-toggle-btn {
+    padding: 0.25rem 0.65rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.15s;
+    border-radius: 12px;
+    text-transform: uppercase;
+  }
+
+  .bg-toggle-btn:hover { border-color: var(--text-muted); color: var(--text); }
+  .bg-toggle-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(255,255,123,0.05); }
+
+  .output-canvas-wrap.bg-bright {
+    background: repeating-conic-gradient(#c8c8c8 0% 25%, #e8e8e8 0% 50%) 0 0 / 20px 20px;
+  }
+
+  .output-canvas-wrap.bg-dark {
+    background: repeating-conic-gradient(#1a1a1a 0% 25%, #161616 0% 50%) 0 0 / 20px 20px;
+  }
+
+  canvas#hiddenCanvas { display: none; }
+
+  /* COLOR CUSTOM ICON override */
+  .color-custom-bg {
+    position: absolute;
+    inset: 0;
+    background: url('data:image/jpeg;base64,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') center/cover;
+    border-radius: 50%;
+  }
+
+  .color-custom-icon {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    pointer-events: none;
+    filter: drop-shadow(0 0 1px rgba(0,0,0,0.5));
+  }
+
+  @media (max-width: 800px) {
+    main { grid-template-columns: 1fr; }
+    header { padding: 1.5rem; }
+    .panel-body, main { padding: 1.25rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 330.85 58.13" style="height:28px;width:auto;display:block;">
+      <defs><style>.cls-1{fill:#f7f7f0}.cls-2{fill:#ffff7b}</style></defs>
+      <g>
+        <path class="cls-1" d="M15.84,57.29H0V.84h15.84v56.45ZM24.35,57.29H3.96v-14.24h19.55c3.31,0,5.87-.34,7.67-1.01,1.8-.67,3.05-2.02,3.75-4.04.7-2.02,1.05-5,1.05-8.93s-.35-6.98-1.05-8.97c-.7-1.99-1.95-3.33-3.75-4-1.8-.67-4.35-1.01-7.67-1.01H3.96V.84h20.39c6.18,0,11.4,1.11,15.67,3.33,4.27,2.22,7.51,5.43,9.73,9.65,2.22,4.21,3.33,9.3,3.33,15.25s-1.11,11.04-3.33,15.25c-2.22,4.21-5.46,7.43-9.73,9.65-4.27,2.22-9.49,3.33-15.67,3.33Z"/>
+        <path class="cls-1" d="M84.84,58.13c-5.95,0-11.05-1.19-15.29-3.58-4.24-2.39-7.49-5.76-9.73-10.11-2.25-4.35-3.37-9.48-3.37-15.38s1.12-11.02,3.37-15.38c2.25-4.35,5.49-7.72,9.73-10.11,4.24-2.39,9.34-3.58,15.29-3.58s11.04,1.19,15.25,3.58c4.21,2.39,7.44,5.76,9.69,10.11,2.25,4.35,3.37,9.48,3.37,15.38s-1.12,11.02-3.37,15.38c-2.25,4.35-5.48,7.72-9.69,10.11-4.21,2.39-9.3,3.58-15.25,3.58ZM84.84,42.72c2.92,0,5.19-.38,6.82-1.14,1.63-.76,2.78-2.13,3.45-4.13.67-1.99,1.01-4.79,1.01-8.38s-.34-6.46-1.01-8.43c-.67-1.97-1.83-3.33-3.45-4.09-1.63-.76-3.9-1.14-6.82-1.14s-5.21.38-6.87,1.14c-1.66.76-2.82,2.12-3.5,4.09-.67,1.97-1.01,4.77-1.01,8.43s.34,6.39,1.01,8.38c.67,1.99,1.84,3.37,3.5,4.13,1.66.76,3.95,1.14,6.87,1.14Z"/>
+        <path class="cls-1" d="M164.54,15.08h-50.55V.84h50.55v14.24ZM147.19,57.29h-15.84V.84h15.84v56.45Z"/>
+        <path class="cls-2" d="M174.7,41.79h-1.43c-4.82,0-8.72-3.9-8.72-8.72h0c0-4.82,3.9-8.72,8.72-8.72h1.43c4.82,0,8.72,3.9,8.72,8.72h0c0,4.82-3.9,8.72-8.72,8.72Z"/>
+        <path class="cls-1" d="M215.68,57.29h-15.84V.84h15.84v56.45Z"/>
+        <path class="cls-1" d="M241.97,57.29h-15.84V.84h15.84v56.45ZM269.85,15.08h-39.43V.84h39.43v14.24ZM268.59,38.5h-38.17v-14.15h38.17v14.15Z"/>
+        <path class="cls-1" d="M308.44,38.67h-15.25L270.87.84h18.79l7.08,13.31,3.79,8.43h1.1l3.71-8.43,7.08-13.31h18.45l-22.41,37.83ZM308.78,57.29h-15.84v-28.39h15.84v28.39Z"/>
+      </g>
+    </svg>
+  </div>
+</header>
+
+<main>
+  <!-- CONTROLS -->
+  <div class="panel">
+    <div class="panel-header">Controls</div>
+    <div class="panel-body">
+
+      <!-- Upload -->
+      <div>
+        <div class="control-label" style="margin-bottom:0.6rem;">Image Input</div>
+        <div class="upload-zone" id="uploadZone">
+          <input type="file" id="fileInput" accept="image/*">
+          <div class="upload-icon">⬆</div>
+          <div class="upload-text">
+            <strong>Drop image here</strong>
+            or click to browse · PNG, JPG, WEBP
+          </div>
+        </div>
+        <div class="thumb-wrap" id="thumbWrap">
+          <img id="thumbImg" src="" alt="preview">
+          <button class="thumb-replace" id="thumbReplace">REPLACE</button>
+        </div>
+      </div>
+
+      <!-- Dot Size -->
+      <div class="control-group">
+        <div class="control-label">
+          Dot Size
+          <span class="control-value" id="dotSizeVal">4px</span>
+        </div>
+        <input type="range" id="dotSize" min="2" max="16" value="4" step="1">
+      </div>
+
+      <!-- Dot Spacing -->
+      <div class="control-group">
+        <div class="control-label">
+          Spacing
+          <span class="control-value" id="spacingVal">6px</span>
+        </div>
+        <input type="range" id="spacing" min="2" max="20" value="6" step="1">
+      </div>
+
+      <!-- Threshold -->
+      <div class="control-group">
+        <div class="control-label">
+          Darkness Threshold
+          <span class="control-value" id="thresholdVal">128</span>
+        </div>
+        <input type="range" id="threshold" min="30" max="240" value="128" step="1">
+      </div>
+
+      <!-- Dot Shape -->
+      <div class="control-group">
+        <div class="control-label">Dot Shape</div>
+        <div class="shape-row">
+          <button class="shape-btn active" data-shape="circle">● Circle</button>
+          <button class="shape-btn" data-shape="square">■ Square</button>
+          <button class="shape-btn" data-shape="diamond">◆ Diamond</button>
+        </div>
+      </div>
+
+      <!-- Dot Color -->
+      <div class="control-group">
+        <div class="control-label">Dot Color</div>
+        <div class="color-row" id="colorRow">
+          <div class="color-swatch active" data-color="#ffff7b" style="background:#ffff7b" title="Yellow"></div>
+          <div class="color-swatch" data-color="#1a110e" style="background:#1a110e;border-color:#444" title="Dark Brown"></div>
+          <div class="color-swatch" data-color="#f7f7f0" style="background:#f7f7f0" title="Off White"></div>
+          <div class="color-swatch" data-color="#ff4d00" style="background:#ff4d00" title="Orange Red"></div>
+          <div class="color-swatch" data-color="#ff2e82" style="background:#ff2e82" title="Hot Pink"></div>
+          <div class="color-custom" title="Custom color">
+            <div class="color-custom-bg"></div>
+            <div class="color-custom-icon">✦</div>
+            <input type="color" id="customColor" value="#ffff7b">
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- OUTPUT -->
+  <div class="output-panel">
+    <div class="output-header">
+      <div class="output-header-left">Preview <span class="live-tag">live</span></div>
+      <div class="output-header-right">
+        <div class="preview-bg-toggle">
+          <button class="bg-toggle-btn active" id="bgDark">Dark</button>
+          <button class="bg-toggle-btn" id="bgBright">Bright</button>
+        </div>
+        <button class="btn-download" id="downloadBtn">↓ Download PNG</button>
+      </div>
+    </div>
+    <div class="output-canvas-wrap bg-dark" id="canvasWrap">
+      <div class="empty-state" id="emptyState">
+        <div class="empty-dots">
+          <div class="empty-dot"></div><div class="empty-dot"></div><div class="empty-dot"></div>
+          <div class="empty-dot"></div><div class="empty-dot"></div><div class="empty-dot"></div>
+          <div class="empty-dot"></div><div class="empty-dot"></div><div class="empty-dot"></div>
+          <div class="empty-dot"></div><div class="empty-dot"></div><div class="empty-dot"></div>
+        </div>
+        <p>Upload an image to see<br>the live dot art preview.</p>
+      </div>
+      <canvas id="outputCanvas"></canvas>
+      <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-dots">
+          <div class="loading-dot"></div>
+          <div class="loading-dot"></div>
+          <div class="loading-dot"></div>
+        </div>
+        <div class="loading-text">Stippling pixels...</div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<canvas id="hiddenCanvas"></canvas>
+
+<script>
+const fileInput     = document.getElementById('fileInput');
+const uploadZone    = document.getElementById('uploadZone');
+const thumbWrap     = document.getElementById('thumbWrap');
+const thumbImg      = document.getElementById('thumbImg');
+const thumbReplace  = document.getElementById('thumbReplace');
+const downloadBtn   = document.getElementById('downloadBtn');
+const outputCanvas  = document.getElementById('outputCanvas');
+const hiddenCanvas  = document.getElementById('hiddenCanvas');
+const emptyState    = document.getElementById('emptyState');
+const loadingOverlay = document.getElementById('loadingOverlay');
+
+const dotSizeSlider  = document.getElementById('dotSize');
+const spacingSlider  = document.getElementById('spacing');
+const thresholdSlider = document.getElementById('threshold');
+const dotSizeVal     = document.getElementById('dotSizeVal');
+const spacingVal     = document.getElementById('spacingVal');
+const thresholdVal   = document.getElementById('thresholdVal');
+const customColorInput = document.getElementById('customColor');
+
+let currentImage  = null;
+let selectedColor = '#ffff7b';
+let selectedShape = 'circle';
+let debounceTimer = null;
+// Cache pixel data so we don't re-read the image on every slider move
+let cachedPixels  = null;
+let cachedW = 0, cachedH = 0;
+
+// ── Range sliders ────────────────────────────────────────────────────────────
+function updateRange(slider, display, suffix) {
+  const pct = ((slider.value - slider.min) / (slider.max - slider.min)) * 100;
+  slider.style.setProperty('--pct', pct + '%');
+  display.textContent = slider.value + suffix;
+}
+
+[dotSizeSlider, spacingSlider, thresholdSlider].forEach(s => {
+  s.addEventListener('input', () => {
+    updateRange(dotSizeSlider, dotSizeVal, 'px');
+    updateRange(spacingSlider, spacingVal, 'px');
+    updateRange(thresholdSlider, thresholdVal, '');
+    scheduleRender();
+  });
+});
+
+updateRange(dotSizeSlider, dotSizeVal, 'px');
+updateRange(spacingSlider, spacingVal, 'px');
+updateRange(thresholdSlider, thresholdVal, '');
+
+// ── Color swatches ───────────────────────────────────────────────────────────
+document.querySelectorAll('.color-swatch').forEach(s => {
+  s.addEventListener('click', () => {
+    document.querySelectorAll('.color-swatch').forEach(x => x.classList.remove('active'));
+    s.classList.add('active');
+    selectedColor = s.dataset.color;
+    scheduleRender();
+  });
+});
+
+customColorInput.addEventListener('input', () => {
+  document.querySelectorAll('.color-swatch').forEach(x => x.classList.remove('active'));
+  selectedColor = customColorInput.value;
+  scheduleRender();
+});
+
+// ── Shape buttons ────────────────────────────────────────────────────────────
+document.querySelectorAll('.shape-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.shape-btn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    selectedShape = b.dataset.shape;
+    scheduleRender();
+  });
+});
+
+// ── Drag & drop / file input ─────────────────────────────────────────────────
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) loadImage(file);
+});
+
+fileInput.addEventListener('change', () => { if (fileInput.files[0]) loadImage(fileInput.files[0]); });
+thumbReplace.addEventListener('click', () => fileInput.click());
+
+function loadImage(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      currentImage = img;
+      thumbImg.src = e.target.result;
+      thumbWrap.style.display = 'block';
+      uploadZone.style.display = 'none';
+      // Pre-cache pixel data at render resolution
+      cachePixels();
+      scheduleRender(0); // render immediately on load
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── Pixel cache ──────────────────────────────────────────────────────────────
+function cachePixels() {
+  const maxW = 900, maxH = 900;
+  let sw = currentImage.width, sh = currentImage.height;
+  if (sw > maxW) { sh = Math.round(sh * maxW / sw); sw = maxW; }
+  if (sh > maxH) { sw = Math.round(sw * maxH / sh); sh = maxH; }
+
+  hiddenCanvas.width = sw;
+  hiddenCanvas.height = sh;
+  const hCtx = hiddenCanvas.getContext('2d');
+  hCtx.drawImage(currentImage, 0, 0, sw, sh);
+  cachedPixels = hCtx.getImageData(0, 0, sw, sh).data;
+  cachedW = sw;
+  cachedH = sh;
+}
+
+// ── Debounced render scheduler ───────────────────────────────────────────────
+function scheduleRender(delay = 60) {
+  if (!currentImage) return;
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(renderDotArt, delay);
+}
+
+// ── Core render ──────────────────────────────────────────────────────────────
+function renderDotArt() {
+  if (!currentImage || !cachedPixels) return;
+
+  // Show subtle spinner only for first render; after that it's fast enough
+  loadingOverlay.style.display = 'flex';
+
+  // Use requestAnimationFrame so the spinner actually paints before heavy work
+  requestAnimationFrame(() => {
+    const dotSize  = parseInt(dotSizeSlider.value);
+    const spacing  = parseInt(spacingSlider.value);
+    const threshold = parseInt(thresholdSlider.value);
+    const step = dotSize + spacing;
+    const half = dotSize / 2;
+
+    outputCanvas.width  = cachedW;
+    outputCanvas.height = cachedH;
+    const ctx = outputCanvas.getContext('2d');
+    ctx.clearRect(0, 0, cachedW, cachedH);
+    ctx.fillStyle = selectedColor;
+
+    for (let y = half; y < cachedH - half; y += step) {
+      for (let x = half; x < cachedW - half; x += step) {
+        const px = Math.floor(x), py = Math.floor(y);
+        const i  = (py * cachedW + px) * 4;
+        if (cachedPixels[i + 3] < 30) continue;
+
+        const brightness = 0.299 * cachedPixels[i] + 0.587 * cachedPixels[i+1] + 0.114 * cachedPixels[i+2];
+        if (brightness > threshold) continue;
+
+        const darkness = 1 - brightness / threshold;
+        const r2 = half * (0.4 + 0.6 * darkness);
+
+        ctx.beginPath();
+        if (selectedShape === 'circle') {
+          ctx.arc(x, y, r2, 0, Math.PI * 2);
+        } else if (selectedShape === 'square') {
+          ctx.rect(x - r2, y - r2, r2 * 2, r2 * 2);
+        } else if (selectedShape === 'diamond') {
+          ctx.moveTo(x, y - r2);
+          ctx.lineTo(x + r2, y);
+          ctx.lineTo(x, y + r2);
+          ctx.lineTo(x - r2, y);
+          ctx.closePath();
+        }
+        ctx.fill();
+      }
+    }
+
+    loadingOverlay.style.display = 'none';
+    emptyState.style.display     = 'none';
+    outputCanvas.style.display   = 'block';
+    downloadBtn.style.display    = 'inline-block';
+  });
+}
+
+// ── Download ──────────────────────────────────────────────────────────────────
+downloadBtn.addEventListener('click', async () => {
+  try {
+    // Convert canvas to blob
+    const blob = await new Promise(resolve =>
+      outputCanvas.toBlob(resolve, 'image/png')
+    );
+
+    if (!blob) {
+      throw new Error('Could not generate image');
+    }
+
+    const file = new File([blob], 'dotify-art.png', {
+      type: 'image/png'
+    });
+
+    // Detect mobile devices only
+    const isMobile =
+      /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    // Use native share ONLY on mobile
+    if (
+      isMobile &&
+      navigator.canShare &&
+      navigator.canShare({ files: [file] })
+    ) {
+      await navigator.share({
+        files: [file],
+        title: 'Dotify Art'
+      });
+
+      return;
+    }
+
+    // Desktop fallback → normal download
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'dotify-art.png';
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    URL.revokeObjectURL(url);
+
+  } catch (err) {
+    console.error('Download/share failed:', err);
+  }
+});
+// ── Preview background toggle ─────────────────────────────────────────────────
+const canvasWrap = document.getElementById('canvasWrap');
+const bgDarkBtn  = document.getElementById('bgDark');
+const bgBrightBtn = document.getElementById('bgBright');
+
+bgDarkBtn.addEventListener('click', () => {
+  canvasWrap.classList.remove('bg-bright');
+  canvasWrap.classList.add('bg-dark');
+  bgDarkBtn.classList.add('active');
+  bgBrightBtn.classList.remove('active');
+});
+
+bgBrightBtn.addEventListener('click', () => {
+  canvasWrap.classList.remove('bg-dark');
+  canvasWrap.classList.add('bg-bright');
+  bgBrightBtn.classList.add('active');
+  bgDarkBtn.classList.remove('active');
+});
+</script>
+</body>
+</html>
