@@ -626,6 +626,7 @@
           <button class="shape-btn active" data-shape="circle">● Circle</button>
           <button class="shape-btn" data-shape="square">■ Square</button>
           <button class="shape-btn" data-shape="diamond">◆ Diamond</button>
+          <button class="shape-btn" data-shape="cross">✕ Cross</button>
         </div>
       </div>
 
@@ -858,6 +859,19 @@ function renderDotArt() {
           ctx.lineTo(x, y + r2);
           ctx.lineTo(x - r2, y);
           ctx.closePath();
+        } else if (selectedShape === 'cross') {
+          const t = Math.max(1, r2 * 0.38);
+          ctx.lineWidth = t;
+          ctx.strokeStyle = selectedColor;
+          ctx.lineCap = 'round';
+          ctx.moveTo(x - r2, y - r2);
+          ctx.lineTo(x + r2, y + r2);
+          ctx.moveTo(x + r2, y - r2);
+          ctx.lineTo(x - r2, y + r2);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.lineWidth = 1;
+          continue;
         }
         ctx.fill();
       }
