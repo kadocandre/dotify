@@ -793,7 +793,7 @@ function loadImage(file) {
 
 // ── Pixel cache ──────────────────────────────────────────────────────────────
 function cachePixels() {
-  const maxW = 900, maxH = 900;
+  const maxW = 1920, maxH = 1920;
   let sw = currentImage.width, sh = currentImage.height;
   if (sw > maxW) { sh = Math.round(sh * maxW / sw); sw = maxW; }
   if (sh > maxH) { sw = Math.round(sw * maxH / sh); sh = maxH; }
