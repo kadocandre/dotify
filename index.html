@@ -9,14 +9,14 @@
   @import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;500;600;700;800&display=swap');
 
   :root {
-    --bg: #0e0e0e;
-    --surface: #161616;
-    --surface2: #1e1e1e;
-    --border: #2a2a2a;
+    --bg: #1a110e;
+    --surface: #221612;
+    --surface2: #2c1e19;
+    --border: #3d2820;
     --accent: #ffff7b;
     --accent2: #ffff7b;
     --text: #f0f0f0;
-    --text-muted: #666;
+    --text-muted: #7a5f58;
     --dot-preview: #ffff7b;
   }
 
@@ -187,7 +187,7 @@
     border: 1px solid var(--border);
     border-radius: 12px;
     overflow: hidden;
-    background: repeating-conic-gradient(#1e1e1e 0% 25%, #161616 0% 50%) 0 0 / 16px 16px;
+    background: repeating-conic-gradient(#2c1e19 0% 25%, #221612 0% 50%) 0 0 / 16px 16px;
   }
 
   .thumb-wrap img {
@@ -326,7 +326,7 @@
     width: 100%;
     padding: 0.9rem;
     background: var(--accent);
-    color: #0e0e0e;
+    color: #1a110e;
     border: none;
     border-radius: 10px;
     font-family: 'Syne', sans-serif;
@@ -399,7 +399,7 @@
     align-items: center;
     justify-content: center;
     padding: 2rem;
-    background: repeating-conic-gradient(#1a1a1a 0% 25%, #161616 0% 50%) 0 0 / 20px 20px;
+    background: repeating-conic-gradient(#261a16 0% 25%, #1a110e 0% 50%) 0 0 / 20px 20px;
     position: relative;
   }
 
@@ -440,7 +440,7 @@
   .loading-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(14,14,14,0.85);
+    background: rgba(26,17,14,0.88);
     display: none;
     align-items: center;
     justify-content: center;
@@ -478,7 +478,7 @@
   .live-tag {
     display: inline-block;
     background: #ffff7b;
-    color: #0e0e0e;
+    color: #1a110e;
     font-size: 0.55rem;
     font-weight: 700;
     letter-spacing: 0.12em;
@@ -519,7 +519,7 @@
   }
 
   .output-canvas-wrap.bg-dark {
-    background: repeating-conic-gradient(#1a1a1a 0% 25%, #161616 0% 50%) 0 0 / 20px 20px;
+    background: repeating-conic-gradient(#261a16 0% 25%, #1a110e 0% 50%) 0 0 / 20px 20px;
   }
 
   canvas#hiddenCanvas { display: none; }
@@ -938,7 +938,94 @@ bgBrightBtn.addEventListener('click', () => {
   canvasWrap.classList.add('bg-bright');
   bgBrightBtn.classList.add('active');
   bgDarkBtn.classList.remove('active');
+  saveSettings();
 });
+
+// Also save when dark bg is toggled
+bgDarkBtn.addEventListener('click', saveSettings);
+
+// ── Settings persistence (localStorage) ──────────────────────────────────────
+const STORAGE_KEY = 'dotify_settings';
+
+function saveSettings() {
+  const settings = {
+    dotSize:    dotSizeSlider.value,
+    spacing:    spacingSlider.value,
+    threshold:  thresholdSlider.value,
+    shape:      selectedShape,
+    color:      selectedColor,
+    customColor: customColorInput.value,
+    bgMode:     canvasWrap.classList.contains('bg-bright') ? 'bright' : 'dark',
+  };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(settings)); } catch(e) {}
+}
+
+function loadSettings() {
+  let settings;
+  try { settings = JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch(e) {}
+  if (!settings) return;
+
+  // Sliders
+  if (settings.dotSize   !== undefined) dotSizeSlider.value   = settings.dotSize;
+  if (settings.spacing   !== undefined) spacingSlider.value   = settings.spacing;
+  if (settings.threshold !== undefined) thresholdSlider.value = settings.threshold;
+  updateRange(dotSizeSlider,  dotSizeVal,   'px');
+  updateRange(spacingSlider,  spacingVal,   'px');
+  updateRange(thresholdSlider, thresholdVal, '');
+
+  // Shape
+  if (settings.shape) {
+    selectedShape = settings.shape;
+    document.querySelectorAll('.shape-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.shape === settings.shape);
+    });
+  }
+
+  // Color
+  if (settings.color) {
+    selectedColor = settings.color;
+    // Try to match a preset swatch
+    let matched = false;
+    document.querySelectorAll('.color-swatch').forEach(s => {
+      const active = s.dataset.color === settings.color;
+      s.classList.toggle('active', active);
+      if (active) matched = true;
+    });
+    // If it was a custom color, restore it in the picker
+    if (!matched && settings.customColor) {
+      customColorInput.value = settings.customColor;
+      selectedColor = settings.color; // already set, but explicit
+    }
+  }
+
+  // Background mode
+  if (settings.bgMode === 'bright') {
+    canvasWrap.classList.remove('bg-dark');
+    canvasWrap.classList.add('bg-bright');
+    bgBrightBtn.classList.add('active');
+    bgDarkBtn.classList.remove('active');
+  } else {
+    canvasWrap.classList.remove('bg-bright');
+    canvasWrap.classList.add('bg-dark');
+    bgDarkBtn.classList.add('active');
+    bgBrightBtn.classList.remove('active');
+  }
+}
+
+// Hook save into every interactive control
+[dotSizeSlider, spacingSlider, thresholdSlider].forEach(s =>
+  s.addEventListener('input', saveSettings)
+);
+document.querySelectorAll('.color-swatch').forEach(s =>
+  s.addEventListener('click', saveSettings)
+);
+customColorInput.addEventListener('input', saveSettings);
+document.querySelectorAll('.shape-btn').forEach(b =>
+  b.addEventListener('click', saveSettings)
+);
+
+// Restore on page load
+loadSettings();
 </script>
 </body>
 </html>
